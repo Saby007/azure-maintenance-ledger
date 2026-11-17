@@ -1,0 +1,25 @@
+// Shared prelude for the planner page ("//#include _planner_base"): picks the most specific planning range with data
+// (service+region -> service -> category) and, when that is thin, the Azure-wide PIR baseline. Evidence, not a forecast.
+let fc = AzOutage_Forecast({IncludeSynthetic});
+let cat = AzOutage_Catalog({IncludeSynthetic}) | summarize category = take_any(category) by service_name;
+let svc = '{PlannerService}';
+let reg = '{PlannerRegion}';
+let svc_cat = toscalar(cat | where service_name == svc | project category);
+let rank = (level: string) { case(level == "service_region", 1, level == "service", 2, 3) };
+let customer = fc
+    | where baseline == "customer"
+    | where (scope_level == "service_region" and scope_key == strcat(svc, "|", reg))
+         or (scope_level == "service" and scope_key == svc)
+         or (scope_level == "category" and scope_key == coalesce(svc_cat, ""))
+    | extend r = rank(scope_level)
+    | order by r asc
+    | extend picked = row_number() == 1;
+let weak = toscalar(customer | where picked | project confidence in ("insufficient", "low"));
+let pir = fc
+    | where baseline == "public_pir" and (scope_key == coalesce(svc_cat, "") or scope_key == "(all categories)")
+    | where coalesce(weak, true)
+    | extend picked = false;
+let rows = union (customer | extend basis = "Your estate"), (pir | extend basis = "Azure-wide PIR baseline, not your estate")
+    | extend mean_over_horizon_h = round(mean_annual_h * {PlannerHorizon}, 2),
+             note = case(basis startswith "Azure-wide", "Broad-impact incidents only; shown because your history is thin.",
+                         picked, "Preferred scope (most specific with data).", "Less specific fallback scope.");

@@ -1,0 +1,3 @@
+// purpose: report sheet - AzOutage_Availability for the report window (user-initiated downtime excluded).
+AzOutage_Availability({WindowDays}, false, false)
+| order by category asc, service_name asc

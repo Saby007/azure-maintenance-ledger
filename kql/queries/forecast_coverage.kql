@@ -1,0 +1,5 @@
+// purpose: how far back the ledger genuinely covers Service Health (REST backfill start, else first collector run).
+// outputs: coverage_start
+AzOutageIngestHealth_CL
+| where status in ("success", "partial") and is_synthetic != true and source in ("servicehealth_events", "backfill_rest")
+| summarize coverage_start = min(iff(source == "backfill_rest" and isnotnull(watermark_utc), watermark_utc, started_utc))

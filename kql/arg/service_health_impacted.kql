@@ -1,0 +1,14 @@
+// purpose: resources impacted by Service Health events (mostly planned maintenance).
+// outputs: subscription_id, tracking_id, resource_id, resource_type, resource_name, region, maintenance_start_utc, maintenance_end_utc, status
+ServiceHealthResources
+| where type =~ "microsoft.resourcehealth/events/impactedresources"
+| extend tracking_id = extract(@"(?i)/events/([^/]+)/impactedResources/", 1, id, typeof(string))
+| project subscription_id = subscriptionId,
+          tracking_id,
+          resource_id = tostring(properties.targetResourceId),
+          resource_type = tostring(properties.targetResourceType),
+          resource_name = tostring(properties.resourceName),
+          region = tostring(properties.targetRegion),
+          maintenance_start_utc = todatetime(properties.maintenanceStartTime),
+          maintenance_end_utc = todatetime(properties.maintenanceEndTime),
+          status = tostring(properties.status)

@@ -1,0 +1,145 @@
+{
+  "common": [
+    {"name": "TimeGenerated", "type": "datetime"},
+    {"name": "ingested_utc", "type": "datetime"},
+    {"name": "row_key", "type": "string"},
+    {"name": "is_synthetic", "type": "boolean"}
+  ],
+  "tables": [
+    {
+      "name": "AzSvcHealthEvents_CL",
+      "columns": [
+        {"name": "subscription_id", "type": "string"},
+        {"name": "tracking_id", "type": "string"},
+        {"name": "event_type", "type": "string"},
+        {"name": "status", "type": "string"},
+        {"name": "level", "type": "string"},
+        {"name": "event_title", "type": "string"},
+        {"name": "summary", "type": "string"},
+        {"name": "impact_start_utc", "type": "datetime"},
+        {"name": "impact_end_utc", "type": "datetime"},
+        {"name": "last_update_utc", "type": "datetime"},
+        {"name": "platform_initiated", "type": "boolean"},
+        {"name": "tags", "type": "string"},
+        {"name": "services", "type": "dynamic"},
+        {"name": "regions", "type": "dynamic"},
+        {"name": "source", "type": "string"}
+      ]
+    },
+    {
+      "name": "AzSvcHealthImpacted_CL",
+      "columns": [
+        {"name": "subscription_id", "type": "string"},
+        {"name": "tracking_id", "type": "string"},
+        {"name": "resource_id", "type": "string"},
+        {"name": "resource_type", "type": "string"},
+        {"name": "resource_name", "type": "string"},
+        {"name": "region", "type": "string"},
+        {"name": "maintenance_start_utc", "type": "datetime"},
+        {"name": "maintenance_end_utc", "type": "datetime"},
+        {"name": "status", "type": "string"}
+      ]
+    },
+    {
+      "name": "AzVmAnnotations_CL",
+      "columns": [
+        {"name": "subscription_id", "type": "string"},
+        {"name": "resource_id", "type": "string"},
+        {"name": "region", "type": "string"},
+        {"name": "annotation_name", "type": "string"},
+        {"name": "category", "type": "string"},
+        {"name": "context", "type": "string"},
+        {"name": "reason", "type": "string"},
+        {"name": "availability_state", "type": "string"},
+        {"name": "previous_availability_state", "type": "string"},
+        {"name": "occurred_utc", "type": "datetime"},
+        {"name": "summary", "type": "string"}
+      ]
+    },
+    {
+      "name": "AzResourceHealthEvents_CL",
+      "columns": [
+        {"name": "event_data_id", "type": "string"},
+        {"name": "resource_id", "type": "string"},
+        {"name": "resource_type", "type": "string"},
+        {"name": "subscription_id", "type": "string"},
+        {"name": "status", "type": "string"},
+        {"name": "current_status", "type": "string"},
+        {"name": "previous_status", "type": "string"},
+        {"name": "health_type", "type": "string"},
+        {"name": "cause", "type": "string"},
+        {"name": "event_utc", "type": "datetime"}
+      ]
+    },
+    {
+      "name": "AzInventoryCounts_CL",
+      "columns": [
+        {"name": "snapshot_date", "type": "datetime"},
+        {"name": "subscription_id", "type": "string"},
+        {"name": "resource_type", "type": "string"},
+        {"name": "region", "type": "string"},
+        {"name": "resource_count", "type": "long"}
+      ]
+    },
+    {
+      "name": "AzPublicPirs_CL",
+      "columns": [
+        {"name": "tracking_id", "type": "string"},
+        {"name": "published_date", "type": "datetime"},
+        {"name": "event_title", "type": "string"},
+        {"name": "body_text", "type": "string"},
+        {"name": "window_start_utc", "type": "datetime"},
+        {"name": "window_end_utc", "type": "datetime"},
+        {"name": "duration_h", "type": "real"},
+        {"name": "parse_status", "type": "string"},
+        {"name": "parse_note", "type": "string"},
+        {"name": "category", "type": "string"},
+        {"name": "source_url", "type": "string"},
+        {"name": "raw_hash", "type": "string"}
+      ]
+    },
+    {
+      "name": "AzServiceCatalog_CL",
+      "columns": [
+        {"name": "service_name", "type": "string"},
+        {"name": "arm_resource_types", "type": "string"},
+        {"name": "category", "type": "string"},
+        {"name": "sla_percent", "type": "real"},
+        {"name": "sla_source_url", "type": "string"},
+        {"name": "sla_verified_on", "type": "string"},
+        {"name": "notes", "type": "string"}
+      ]
+    },
+    {
+      "name": "AzOutageForecast_CL",
+      "columns": [
+        {"name": "computed_utc", "type": "datetime"},
+        {"name": "scope_level", "type": "string"},
+        {"name": "scope_key", "type": "string"},
+        {"name": "window_days", "type": "int"},
+        {"name": "n_events", "type": "int"},
+        {"name": "events_per_year", "type": "real"},
+        {"name": "mean_annual_h", "type": "real"},
+        {"name": "p50_annual_h", "type": "real"},
+        {"name": "p90_annual_h", "type": "real"},
+        {"name": "duration_basis", "type": "string"},
+        {"name": "confidence", "type": "string"},
+        {"name": "baseline", "type": "string"}
+      ]
+    },
+    {
+      "name": "AzOutageIngestHealth_CL",
+      "columns": [
+        {"name": "run_id", "type": "string"},
+        {"name": "source", "type": "string"},
+        {"name": "started_utc", "type": "datetime"},
+        {"name": "finished_utc", "type": "datetime"},
+        {"name": "rows_read", "type": "long"},
+        {"name": "rows_written", "type": "long"},
+        {"name": "watermark_utc", "type": "datetime"},
+        {"name": "status", "type": "string"},
+        {"name": "errors", "type": "dynamic"}
+      ]
+    }
+  ]
+}

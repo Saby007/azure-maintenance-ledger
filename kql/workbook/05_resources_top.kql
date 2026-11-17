@@ -1,0 +1,8 @@
+// purpose: the 10 resources with the most unavailable minutes (user-initiated and stale intervals excluded).
+// outputs: resource, service_name, intervals, downtime_min
+//#include _prelude
+iv
+| where state =~ "Unavailable" and not(stale_open)
+| summarize intervals = count(), downtime_min = round(sum(minutes), 1) by resource_id, service_name
+| top 10 by downtime_min desc
+| project resource = tostring(split(resource_id, "/")[-1]), service_name, intervals, downtime_min

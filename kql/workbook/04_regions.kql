@@ -1,0 +1,8 @@
+// purpose: events per region (distinct TrackingId per region; regions overlap, do not add rows up to a total).
+// outputs: region, events, unplanned, planned, exposure_p50_h, exposure_p90_h
+//#include _prelude
+let per_event = es | where class in ("Planned", "Unplanned") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, region;
+per_event
+| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == "Unplanned"), planned = dcountif(tracking_id, class == "Planned"),
+            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by region
+| order by events desc

@@ -1,0 +1,18 @@
+[project]
+name = "azure-outage-ledger"
+version = "0.1.0"
+description = "Durable ledger and planning ranges for Azure planned/unplanned outages"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tools"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["poc", ".venv", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

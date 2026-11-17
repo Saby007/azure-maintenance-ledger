@@ -1,0 +1,4 @@
+// purpose: daily resource counts (denominators for observed availability).
+// outputs: subscription_id, resource_type, region, resource_count
+resources
+| summarize resource_count = count() by subscription_id = subscriptionId, resource_type = tolower(type), region = location

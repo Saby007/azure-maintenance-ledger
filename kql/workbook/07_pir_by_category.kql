@@ -1,0 +1,6 @@
+// purpose: incident window statistics by category from public PIRs (Azure-wide benchmark, not your estate). n shown with every statistic.
+// outputs: category, pirs, with_window, median_h, p90_h, max_h
+AzOutage_PirBaseline({IncludeSynthetic})
+| summarize pirs = count(), with_window = countif(isnotnull(duration_h)), median_h = round(percentile(duration_h, 50), 1),
+            p90_h = round(percentile(duration_h, 90), 1), max_h = round(max(duration_h), 1) by category
+| order by pirs desc

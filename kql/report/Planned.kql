@@ -1,0 +1,5 @@
+// purpose: report sheet - AzOutage_Planned (scheduled windows, not downtime).
+AzOutage_Planned(false)
+| project-away services, regions
+| order by window_start_utc desc
+| take 5000

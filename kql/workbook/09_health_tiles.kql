@@ -1,0 +1,20 @@
+// purpose: KPI tiles for the Data health page.
+// outputs: order, metric, value, subtitle, status
+let h = AzOutage_DataHealth({IncludeSynthetic});
+let ingest = h | where section == "ingest";
+let ok_n = toscalar(ingest | where status == "OK" | summarize count());
+let stale_n = toscalar(ingest | where status == "STALE" | summarize count());
+let last_ok = toscalar(ingest | summarize max(last_success_utc));
+let subs = toscalar(h | where section == "subscriptions" | project value);
+let subs_status = toscalar(h | where section == "subscriptions" | project status);
+datatable(order: int)[1, 2, 3, 4]
+| extend metric = case(order == 1, "Sources reporting", order == 2, "Stale sources", order == 3, "Last successful update (hours ago)", "Subscriptions covered"),
+         value = case(order == 1, todouble(ok_n), order == 2, todouble(stale_n),
+                      order == 3, round(todouble(datetime_diff("minute", now(), last_ok)) / 60.0, 1), todouble(subs)),
+         subtitle = case(order == 1, "Updated within the last 36 hours", order == 2, "No success in 36 hours: numbers may be out of date",
+                         order == 3, "Most recent successful collection", "Subscriptions with data vs configured"),
+         status = case(order == 1, iff(ok_n > 0, "good", "bad"), order == 2, iff(stale_n == 0, "good", "bad"),
+                       order == 3, iff(isnull(last_ok), "bad", iff(datetime_diff("hour", now(), last_ok) <= 36, "good", "bad")),
+                       iff(subs_status == "OK", "good", "warn"))
+| project order, metric, value, subtitle, status
+| order by order asc

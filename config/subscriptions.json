@@ -1,0 +1,6 @@
+{
+  "_comment": "Fallback list of subscriptions to collect from when AOL_SUBSCRIPTIONS is not set. The one-click deployment sets AOL_SUBSCRIPTIONS on the Function app. scripts/enable-export.ps1 and scripts/grant-reader.ps1 read this file: replace the placeholder with your subscription ids.",
+  "subscriptions": [
+    {"id": "00000000-0000-0000-0000-000000000000", "name": "replace-me"}
+  ]
+}

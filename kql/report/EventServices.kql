@@ -1,0 +1,5 @@
+// purpose: report sheet - AzOutage_EventServices within the report window (per-service/region; do not add rows up to a total).
+AzOutage_EventServices(false)
+| where impact_start_utc > ago({WindowDays}d)
+| order by impact_start_utc desc
+| take 10000

@@ -1,0 +1,7 @@
+// purpose: observed downtime minutes per month (Resource Health Unavailable), planned vs unplanned. Separate from event exposure.
+// outputs: month, class, downtime_min
+//#include _prelude
+iv
+| where state =~ "Unavailable" and not(stale_open)
+| summarize downtime_min = round(sum(minutes), 1) by month = startofmonth(start_utc), class
+| order by month asc

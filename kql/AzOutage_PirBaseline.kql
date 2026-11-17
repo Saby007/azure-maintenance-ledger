@@ -1,0 +1,9 @@
+// AzOutage_PirBaseline
+// purpose: public Azure PIRs (Azure-wide, NOT the customer's estate). One row per PIR with the parsed incident window.
+// inputs: includeSynthetic:bool=false
+// outputs: tracking_id, published_date, year, event_title, category, window_start_utc, window_end_utc, duration_h, parse_status, parse_note
+AzPublicPirs_CL
+| where includeSynthetic or is_synthetic != true
+| summarize arg_max(ingested_utc, *) by row_key
+| summarize arg_max(ingested_utc, *) by tracking_id
+| project tracking_id, published_date, year = getyear(published_date), event_title, category, window_start_utc, window_end_utc, duration_h, parse_status, parse_note

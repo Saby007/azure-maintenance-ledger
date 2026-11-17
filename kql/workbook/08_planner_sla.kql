@@ -1,0 +1,8 @@
+// purpose: SLA allowance for the chosen service (only where an SLA is set in the service catalog; never invented).
+// outputs: service_name, category, sla_percent, allowance_h_per_year, allowance_min_per_year, sla_source_url, sla_verified_on, status
+AzOutage_Catalog({IncludeSynthetic})
+| where service_name == '{PlannerService}'
+| summarize sla_percent = take_any(sla_percent), sla_source_url = take_any(sla_source_url), sla_verified_on = take_any(sla_verified_on), category = take_any(category) by service_name
+| extend allowance_h_per_year = iff(isnotnull(sla_percent), round((1.0 - sla_percent / 100.0) * 8760.0, 3), real(null)),
+         allowance_min_per_year = iff(isnotnull(sla_percent), round((1.0 - sla_percent / 100.0) * 8760.0 * 60.0, 1), real(null)),
+         status = iff(isnull(sla_percent), "SLA not set", "SLA from catalog")

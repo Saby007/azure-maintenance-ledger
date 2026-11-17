@@ -1,0 +1,642 @@
+[
+ {
+  "date": "2026-09-30",
+  "title": "Post Incident Review (PIR) \u2013 Network Connectivity \u2013 Gateway service degradation in multiple regions",
+  "id": "7Q30-010",
+  "dur_h": 5.75,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2026-09-29",
+  "title": "Post Incident Review (PIR) \u2013 Azure OpenAI Service, Foundry Agent Service, Foundry Models, and Azure AI services \u2013 Intermittent request failures and latency in Sweden Central",
+  "id": "7QL5-Z50",
+  "dur_h": 5.916666666666667,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2026-07-23",
+  "title": "Post Incident Review (PIR) \u2013 Network connectivity \u2013 Issues accessing resources in West US",
+  "id": "ZJV6-SGG",
+  "dur_h": 4.95,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2026-05-29",
+  "title": "Post Incident Review (PIR) \u2013 Azure OpenAI Service \u2013 Latency and intermittent failures in multiple regions",
+  "id": "LYXT-C1Z",
+  "dur_h": 7.433333333333334,
+  "area": "AI / Cognitive",
+  "multi_region": true
+ },
+ {
+  "date": "2026-05-29",
+  "title": "Post Incident Review (PIR) \u2013 Multiple services \u2013 Power/cooling issues in West US 2",
+  "id": "GHRP-84G",
+  "dur_h": 22.1,
+  "area": "Compute / Containers / App",
+  "multi_region": true
+ },
+ {
+  "date": "2026-04-24",
+  "title": "Post Incident Review (PIR) \u2013 Multiple services \u2013 Control plane issues in East US",
+  "id": "5GP8-W0G",
+  "dur_h": 11.866666666666667,
+  "area": "Compute / Containers / App",
+  "multi_region": true
+ },
+ {
+  "date": "2026-03-09",
+  "title": "Post Incident Review (PIR) \u2013 Azure OpenAI \u2013 GPT-5.2 availability degradation in 7 regions",
+  "id": "8GCS-858",
+  "dur_h": 20.2,
+  "area": "AI / Cognitive",
+  "multi_region": false
+ },
+ {
+  "date": "2026-02-07",
+  "title": "Post Incident Review (PIR) \u2013 Power event impacting multiple services \u2013 West US",
+  "id": "_SVS-5_G",
+  "dur_h": 20.433333333333334,
+  "area": "Compute / Containers / App",
+  "multi_region": true
+ },
+ {
+  "date": "2026-02-02",
+  "title": "Post Incident Review (PIR) \u2013 Virtual Machines, Managed identities for Azure resources, and dependent services \u2013 Service management issues in multiple regions",
+  "id": "FNJ8-VQZ",
+  "dur_h": 6.45,
+  "area": "Compute / Containers / App",
+  "multi_region": true
+ },
+ {
+  "date": "2025-12-22",
+  "title": "Post Incident Review (PIR) \u2013 Entra Privileged Identity Management \u2013 Customers experiencing API failures",
+  "id": "FV31-PQG",
+  "dur_h": 10.416666666666666,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2025-12-08",
+  "title": "Post Incident Review (PIR) \u2013 Azure Resource Manager \u2013 Service management failures affecting Azure Government",
+  "id": "ML7_-DWG",
+  "dur_h": 3.15,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2025-12-08",
+  "title": "Post Incident Review (PIR) \u2013 Azure Resource Manager \u2013 Service management failures affecting Azure in China",
+  "id": "JSNV-FBZ",
+  "dur_h": 9.166666666666666,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2025-11-05",
+  "title": "Post Incident Review (PIR) \u2013 Thermal event impacting multiple services in AZ01 \u2013 West Europe",
+  "id": "2LGD-9VG",
+  "dur_h": 9.533333333333333,
+  "area": "Compute / Containers / App",
+  "multi_region": true
+ },
+ {
+  "date": "2025-10-29",
+  "title": "Post Incident Review (PIR) \u2013 Azure Front Door \u2013 Connectivity issues across multiple regions",
+  "id": "YKYN-BWZ",
+  "dur_h": 8.4,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2025-10-09",
+  "title": "Post Incident Review (PIR) \u2013 Azure Portal and other management portals \u2013 Access issues in multiple regions",
+  "id": "QKNQ-PB8",
+  "dur_h": 4.266666666666667,
+  "area": "Management / Monitoring",
+  "multi_region": true
+ },
+ {
+  "date": "2025-10-09",
+  "title": "Post Incident Review (PIR) \u2013 Azure Front Door \u2013 Access issues in multiple regions",
+  "id": "QNBQ-5W8",
+  "dur_h": 8.166666666666666,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2025-09-26",
+  "title": "Post Incident Review (PIR) \u2013 Network Connectivity \u2013 Multiple services impacted in Switzerland North",
+  "id": "BT6W-FX0",
+  "dur_h": 22.083333333333332,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2025-09-10",
+  "title": "Post Incident Review (PIR) \u2013 Service management operations failures in East US 2",
+  "id": "VKY3-PF8",
+  "dur_h": 9.783333333333333,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2025-03-18",
+  "title": "Post Incident Review (PIR) \u2013 Network Connectivity \u2013 Availability issues in East US",
+  "id": "Z_SZ-NV8",
+  "dur_h": 3.25,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2025-03-03",
+  "title": "Post Incident Review (PIR) \u2013 Network Connectivity \u2013 Toronto edge site issues",
+  "id": "ZT0X-9B8",
+  "dur_h": 2.25,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2025-02-25",
+  "title": "Post Incident Review (PIR) \u2013 Microsoft Entra ID \u2013 DNS authentication failures using Seamless SSO and Microsoft Entra Connect Sync",
+  "id": "TMS9-J_8",
+  "dur_h": 8.55,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2025-01-08",
+  "title": "Post Incident Review (PIR) \u2013 Networking issues impacting Azure Services in East US 2",
+  "id": "PLP3-1W8",
+  "dur_h": 50.21666666666667,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2024-12-26",
+  "title": "Post Incident Review (PIR) \u2013 Services impacted after zonal power issue \u2013 South Central US",
+  "id": "CNF4-N_0",
+  "dur_h": 24.833333333333332,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2024-11-13",
+  "title": "Post Incident Review (PIR) \u2013 Azure Storage \u2013 Unreachable Blob and Data Lake storage accounts in multiple regions",
+  "id": "PSM0-BQ8",
+  "dur_h": 11.666666666666666,
+  "area": "Storage / Data",
+  "multi_region": true
+ },
+ {
+  "date": "2024-09-27",
+  "title": "Post Incident Review (PIR) \u2013 Azure Resource Manager \u2013 Issues in Azure US Government regions",
+  "id": "HSKF-FB0",
+  "dur_h": 1.6333333333333333,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2024-09-16",
+  "title": "Post Incident Review (PIR) \u2013 Azure Virtual Desktop \u2013 Unable to create new connections, impacting US regions",
+  "id": "1LG8-1X0",
+  "dur_h": 1.8333333333333333,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2024-09-05",
+  "title": "Post Incident Review (PIR) \u2013 Azure Resource Manager \u2013 Control plane issues in China North 3",
+  "id": "HVZN-VB0",
+  "dur_h": 13.5,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2024-08-05",
+  "title": "Post Incident Review (PIR) \u2013 Azure Front Door \u2013 Intermittent issues with Microsoft services using AFD",
+  "id": "0N_5-PQ0",
+  "dur_h": 1.45,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2024-07-30",
+  "title": "Post Incident Review (PIR) \u2013 Azure Front Door \u2013 Connectivity issues in multiple regions",
+  "id": "KTY1-HW8",
+  "dur_h": 2.216666666666667,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2024-07-19",
+  "title": "Virtual Machines startup failures due to CrowdStrike Falcon Agent update issue",
+  "id": "1VT1-LX0",
+  "dur_h": null,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2024-07-18",
+  "title": "Post Incident Review (PIR) \u2013 Storage \u2013 Impact to multiple services in Central US",
+  "id": "1K80-N_8",
+  "dur_h": 24.333333333333332,
+  "area": "Identity / Entra",
+  "multi_region": true
+ },
+ {
+  "date": "2024-07-13",
+  "title": "Post Incident Review (PIR) \u2013 Azure OpenAI Service \u2013 Errors in multiple regions",
+  "id": "4L44-3F0",
+  "dur_h": 23.583333333333332,
+  "area": "AI / Cognitive",
+  "multi_region": true
+ },
+ {
+  "date": "2024-07-12",
+  "title": "Post Incident Review (PIR) \u2013 Managed Identities for Azure resources \u2013 Failures in Australia East",
+  "id": "FTVR-L9Z",
+  "dur_h": null,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2024-04-22",
+  "title": "Post Incident Review (PIR) \u2013 DNS resolution issues impacted Azure in China",
+  "id": "V_BH-7DZ",
+  "dur_h": 2.25,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2024-04-19",
+  "title": "Post Incident Review (PIR) - Azure Database for MySQL/MariaDB in West US, Azure Databricks in 3 regions",
+  "id": "QS3K-BPZ",
+  "dur_h": 3.066666666666667,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2024-03-14",
+  "title": "Post Incident Review (PIR) - Network connectivity - Multiple services impacted in South Africa North and South Africa West",
+  "id": "VT60-RPZ",
+  "dur_h": 24.45,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2024-01-21",
+  "title": "Post Incident Review (PIR) - Azure Resource Manager - Services impacted by ARM failures",
+  "id": "NKRF-1TG",
+  "dur_h": 7.466666666666667,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2023-09-16",
+  "title": "Post Incident Review (PIR) \u2013 Services impacted by power, BIOS, and Virtual Machine issues \u2013 East US",
+  "id": "2LZ0-3DG",
+  "dur_h": 11.6,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2023-08-30",
+  "title": "Post Incident Review (PIR) - Services impacted after power/cooling issue - Australia East",
+  "id": "VVTQ-J98",
+  "dur_h": null,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2023-07-06",
+  "title": "Post Incident Review (PIR) - Azure Monitor - Logs data access issues",
+  "id": "XMGF-5Z0",
+  "dur_h": 9.75,
+  "area": "Management / Monitoring",
+  "multi_region": false
+ },
+ {
+  "date": "2023-07-05",
+  "title": "Post Incident Review (PIR) - Networking fiber cut - West Europe",
+  "id": "FVHB-188",
+  "dur_h": 8.633333333333333,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2023-06-16",
+  "title": "Post Incident Review (PIR) - Networking connectivity issues - West Europe",
+  "id": "VLB8-1Z0",
+  "dur_h": 4.85,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2023-06-09",
+  "title": "Post Incident Review (PIR) - Azure Portal - Errors accessing the Azure portal",
+  "id": "QNPD-NC8",
+  "dur_h": 1.8333333333333333,
+  "area": "Management / Monitoring",
+  "multi_region": false
+ },
+ {
+  "date": "2023-03-23",
+  "title": "Post Incident Review (PIR) \u2013 Azure Resource Manager \u2013 West Europe",
+  "id": "RNQ2-NC8",
+  "dur_h": 5.166666666666667,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2023-03-06",
+  "title": "Post Incident Review (PIR) - Azure Storage - West Europe",
+  "id": "R_36-P80",
+  "dur_h": 14.083333333333334,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2023-02-07",
+  "title": "Post Incident Review (PIR) - Multi-service outage \u2013 Asia-Pacific Area",
+  "id": "VN11-JD8",
+  "dur_h": 32.18333333333333,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2023-01-31",
+  "title": "Post Incident Review (PIR) - Service management issues - East US 2",
+  "id": "BS81-390",
+  "dur_h": 19.05,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2023-01-25",
+  "title": "Post Incident Review (PIR) \u2013 Azure Networking \u2013 Global WAN issues",
+  "id": "VSG1-B90",
+  "dur_h": 5.583333333333333,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2023-01-23",
+  "title": "Post Incident Review (PIR) - Intermittent networking issues - South Central US",
+  "id": "7NBR-T98",
+  "dur_h": 3.9833333333333334,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2023-01-18",
+  "title": "Post Incident Review (PIR) \u2013 Single zone power event \u2013 West Europe",
+  "id": "6S_Q-JT8",
+  "dur_h": 3.433333333333333,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-11-02",
+  "title": "Post Incident Review (PIR) - Enrolling new certificates / Provisioning new resources - Azure Public / Government / China",
+  "id": "YTGZ-1Z8",
+  "dur_h": 29.216666666666665,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2022-10-26",
+  "title": "Post Incident Review (PIR) - Azure Cosmos DB - East US",
+  "id": "JKWW-JP8",
+  "dur_h": 5.583333333333333,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2022-09-07",
+  "title": "Post Incident Review (PIR) - Azure Front Door - Connectivity Issues",
+  "id": "YV8C-DT0",
+  "dur_h": 3.75,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2022-09-07",
+  "title": "Post Incident Review (PIR) - Azure Cosmos DB - North Europe",
+  "id": "3TPC-DT8",
+  "dur_h": 7.516666666666667,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2022-08-30",
+  "title": "Post Incident Review (PIR) - Canonical Ubuntu issue impacted VMs and AKS",
+  "id": "2TWN-VT0",
+  "dur_h": 34.0,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-08-27",
+  "title": "Post Incident Review (PIR) - Datacenter power event - West US 2",
+  "id": "MMXN-RZ0",
+  "dur_h": 23.216666666666665,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-08-18",
+  "title": "Post Incident Review (PIR) - Azure Key Vault - Provisioning Failures",
+  "id": "YLBJ-790",
+  "dur_h": 9.866666666666667,
+  "area": "Management / Monitoring",
+  "multi_region": false
+ },
+ {
+  "date": "2022-08-12",
+  "title": "Post Incident Review (PIR) - Azure Communication Services - Multiple Regions",
+  "id": "YTYN-5T8",
+  "dur_h": 9.283333333333333,
+  "area": "Other",
+  "multi_region": true
+ },
+ {
+  "date": "2022-07-29",
+  "title": "Post Incident Review (PIR) \u2013 Network Connectivity Issues",
+  "id": "7SHM-P88",
+  "dur_h": 5.333333333333333,
+  "area": "Networking",
+  "multi_region": false
+ },
+ {
+  "date": "2022-07-21",
+  "title": "Post Incident Review (PIR) - SQL Database - West Europe",
+  "id": "3TBL-PD8",
+  "dur_h": 9.716666666666667,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2022-06-29",
+  "title": "Post Incident Review (PIR) - Wide Area Network - Multiple Regions",
+  "id": "YKDK-TT8",
+  "dur_h": 17.566666666666666,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2022-06-28",
+  "title": "Post Incident Review (PIR)  - Azure Software Load Balancer - Multiple Regions",
+  "id": "YVTL-RS0",
+  "dur_h": 70.56666666666666,
+  "area": "Networking",
+  "multi_region": true
+ },
+ {
+  "date": "2022-06-07",
+  "title": "Post Incident Review (PIR) - Datacenter cooling event - East US 2",
+  "id": "NMB2-ND0",
+  "dur_h": 11.816666666666666,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-05-31",
+  "title": "RCA - Azure Active Directory Sign In logs",
+  "id": "YL23-V90",
+  "dur_h": 12.316666666666666,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2022-04-08",
+  "title": "RCA - Service Management Operation Errors Across Azure Services in East US 2",
+  "id": "Y__5-9C0",
+  "dur_h": 26.25,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2022-03-16",
+  "title": "RCA - Azure AD B2C \u2013 Authentication Failures and Error Notifications",
+  "id": "TTCR-NTZ",
+  "dur_h": 1.15,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2022-03-01",
+  "title": "RCA - Azure Resource Manager - Service Management Operation Failures",
+  "id": "ZNRZ-HDG",
+  "dur_h": 39.31666666666667,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-02-16",
+  "title": "RCA - SQL Database and App Service - West Europe",
+  "id": "9TDP-N8G",
+  "dur_h": 8.0,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2022-02-12",
+  "title": "RCA - Azure SQL DB and Cosmos DB Unavailable",
+  "id": "SL1P-TSZ",
+  "dur_h": 71.96666666666667,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2022-02-12",
+  "title": "Virtual Machines - West US - Resolved",
+  "id": "ZS1T-LCG",
+  "dur_h": 1.8666666666666667,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-02-02",
+  "title": "RCA - Azure AD - Service Management Failures",
+  "id": "SMWW-BDZ",
+  "dur_h": 2.2666666666666666,
+  "area": "Other",
+  "multi_region": false
+ },
+ {
+  "date": "2022-01-13",
+  "title": "RCA - Azure Resource Manager - Issues with management and resource operations",
+  "id": "8V39-P9Z",
+  "dur_h": 35.0,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2022-01-13",
+  "title": "Azure Data Factory V2 - West Europe - Mitigated",
+  "id": "PKJ8-TTZ",
+  "dur_h": 33.833333333333336,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2022-01-04",
+  "title": "Azure Cosmos DB - East US",
+  "id": "9VT8-HPG",
+  "dur_h": 19.183333333333334,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2021-12-16",
+  "title": "Mitigated - Microsoft Graph API",
+  "id": "ZN7Y-5DG",
+  "dur_h": 3.5,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2021-12-16",
+  "title": "RCA - Azure Active Directory - Experiencing sign in issues when attempting to access Azure, Dynamics 365, and/or Microsoft 365 Services",
+  "id": "S_3M-FZZ",
+  "dur_h": 1.4166666666666667,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2021-12-13",
+  "title": "RCA - Azure Data Factory V2 - West Europe",
+  "id": "8T9M-T9G",
+  "dur_h": 6.0,
+  "area": "Storage / Data",
+  "multi_region": false
+ },
+ {
+  "date": "2021-12-09",
+  "title": "RCA - Errors connecting to SCM App Service and/or Azure Functions deployments",
+  "id": "SNCJ-9ZG",
+  "dur_h": 3.3833333333333333,
+  "area": "Compute / Containers / App",
+  "multi_region": false
+ },
+ {
+  "date": "2021-11-16",
+  "title": "RCA - Azure Active Directory - Issues when attempting to authenticate",
+  "id": "SVT2-VCZ",
+  "dur_h": 2.6666666666666665,
+  "area": "Identity / Entra",
+  "multi_region": false
+ },
+ {
+  "date": "2021-11-09",
+  "title": "RCA - Intermittent Failures When Accessing or Using Access Panel",
+  "id": "DK83-BDZ",
+  "dur_h": 5.416666666666667,
+  "area": "Identity / Entra",
+  "multi_region": false
+ }
+]

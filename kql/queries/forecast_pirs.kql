@@ -1,0 +1,5 @@
+// purpose: parsed public PIR durations for the Azure-wide baseline.
+// outputs: tracking_id, category, duration_h, published_date
+AzOutage_PirBaseline()
+| where isnotnull(duration_h)
+| project tracking_id, category, duration_h, published_date

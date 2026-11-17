@@ -1,0 +1,8 @@
+// purpose: the 10 regions with the most events, for the bar chart (distinct TrackingId per region).
+// outputs: region, unplanned, planned
+//#include _prelude
+es
+| where class in ("Planned", "Unplanned") and region !in ("(unknown)", "Global")
+| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == "Unplanned"), planned = dcountif(tracking_id, class == "Planned") by region
+| top 10 by events desc
+| project region, unplanned, planned

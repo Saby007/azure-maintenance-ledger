@@ -1,0 +1,5 @@
+// purpose: report sheet - AzOutage_ResourceIntervals overlapping the report window.
+AzOutage_ResourceIntervals(false)
+| where end_utc > ago({WindowDays}d)
+| order by start_utc desc
+| take 10000

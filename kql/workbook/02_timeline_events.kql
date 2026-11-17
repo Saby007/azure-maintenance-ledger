@@ -1,0 +1,7 @@
+// purpose: events per month, planned vs unplanned (distinct TrackingId).
+// outputs: month, class, events
+//#include _prelude
+es
+| where class in ("Planned", "Unplanned")
+| summarize events = dcount(tracking_id) by month = startofmonth(impact_start_utc), class
+| order by month asc

@@ -1,0 +1,48 @@
+// AzOutage_Availability
+// purpose: observed availability per service over the trailing window, vs SLA where one is set (method items 4-5).
+//          availability = 1 - merged Unavailable minutes / (resources x window minutes); resources from the latest inventory snapshot.
+//          User-initiated downtime is excluded unless includeUserInitiated. Degraded is not counted as downtime.
+// inputs: windowDays:int=365, includeUserInitiated:bool=false, includeSynthetic:bool=false
+// outputs: service_name, category, resources, window_days, downtime_min, unplanned_min, planned_min, availability_pct, sla_percent,
+//          sla_allowance_min (per resource, null if no SLA), sla_status, approximate
+let win_end = now();
+let win_start = ago(1d * windowDays);
+let win_min = todouble(windowDays) * 1440.0;
+let cat = AzOutage_Catalog(includeSynthetic) | project service_name, arm_type, category, sla_percent;
+let inv_all = AzInventoryCounts_CL
+    | where includeSynthetic or is_synthetic != true
+    | summarize arg_max(ingested_utc, *) by row_key
+    | extend rt = tolower(resource_type);
+let inv_latest = inv_all
+    | summarize arg_max(snapshot_date, resource_count) by subscription_id, rt, region
+    | summarize resources = sum(resource_count) by rt;
+let inv_shape = inv_all
+    | where snapshot_date >= win_start
+    | summarize total = sum(resource_count) by rt, snapshot_date
+    | summarize first_snapshot = min(snapshot_date), lo = min(total), hi = max(total) by rt
+    | extend approximate = lo != hi or first_snapshot > win_start + 1d;
+let downtime = AzOutage_ResourceIntervals(includeSynthetic)
+    | where state =~ "Unavailable" and not(stale_open) and (includeUserInitiated or not(user_initiated))
+    | extend s = max_of(start_utc, win_start), e = min_of(end_utc, win_end)
+    | where e > s
+    | extend mins = todouble(datetime_diff("second", e, s)) / 60.0, rt = tolower(resource_type)
+    | summarize downtime_min = sum(mins), unplanned_min = sumif(mins, class == "Unplanned"), planned_min = sumif(mins, class == "Planned") by rt;
+let per_type = inv_latest
+    | join kind=leftouter inv_shape on rt
+    | join kind=leftouter downtime on rt
+    | join kind=inner (cat | summarize service_name = take_any(service_name), category = take_any(category), sla_percent = take_any(sla_percent) by rt = arm_type) on rt
+    | project service_name, category, sla_percent, resources, downtime_min = coalesce(downtime_min, 0.0), unplanned_min = coalesce(unplanned_min, 0.0),
+              planned_min = coalesce(planned_min, 0.0), approximate = coalesce(approximate, true);
+per_type
+| summarize resources = sum(resources), downtime_min = sum(downtime_min), unplanned_min = sum(unplanned_min), planned_min = sum(planned_min),
+            approximate = max(toint(approximate)), sla_percent = take_any(sla_percent), category = take_any(category) by service_name
+| extend window_days = windowDays,
+         availability_pct = iff(resources > 0, round((1.0 - downtime_min / (resources * win_min)) * 100.0, 5), real(null)),
+         sla_allowance_min = iff(isnotnull(sla_percent), round((1.0 - sla_percent / 100.0) * win_min, 2), real(null)),
+         approximate = approximate == 1
+| extend sla_status = case(isnull(sla_percent), "SLA not set",
+                           isnull(availability_pct), "No inventory",
+                           availability_pct >= sla_percent, "Within SLA",
+                           "Below SLA")
+| project service_name, category, resources, window_days, downtime_min = round(downtime_min, 1), unplanned_min = round(unplanned_min, 1),
+          planned_min = round(planned_min, 1), availability_pct, sla_percent, sla_allowance_min, sla_status, approximate

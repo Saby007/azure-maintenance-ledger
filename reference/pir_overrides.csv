@@ -1,0 +1,5 @@
+tracking_id,window_start_utc,window_end_utc,note
+# Windows taken verbatim from the public PIR text. Blank window = no window stated in the PIR; excluded from duration statistics.
+FTVR-L9Z,2024-07-12T00:55:00,2024-07-12T06:28:00,"PIR: between 00:55 UTC and 06:28 UTC on 12 July 2024 (lower-case 'between' and narrow no-break spaces in source)"
+VVTQ-J98,2023-08-30T10:30:00,2023-09-03T20:00:00,"PIR: starting approx 10:30 UTC 30 Aug 2023; full mitigation 20:00 UTC 3 Sep 2023 (most services recovered by 22:40 UTC 30 Aug)"
+1VT1-LX0,,,"CrowdStrike Falcon agent update (non-Azure root cause); PIR states no impact window"

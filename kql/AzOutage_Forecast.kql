@@ -1,0 +1,9 @@
+// AzOutage_Forecast
+// purpose: latest planning ranges written by the daily forecast run (analytics/forecast.py). Evidence, not a guarantee.
+// inputs: includeSynthetic:bool=false
+// outputs: computed_utc, scope_level, scope_key, window_days, n_events, events_per_year, mean_annual_h, p50_annual_h, p90_annual_h, duration_basis, confidence, baseline
+let newest_load = toscalar(AzOutageForecast_CL | where includeSynthetic or is_synthetic != true | summarize max(computed_utc));
+AzOutageForecast_CL
+| where (includeSynthetic or is_synthetic != true) and computed_utc == newest_load
+| summarize arg_max(ingested_utc, *) by row_key
+| project computed_utc, scope_level, scope_key, window_days, n_events, events_per_year, mean_annual_h, p50_annual_h, p90_annual_h, duration_basis, confidence, baseline

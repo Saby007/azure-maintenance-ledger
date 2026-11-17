@@ -1,0 +1,18 @@
+// Shared prelude for workbook queries ("//#include _prelude"). Workbook tokens such as {TimeRange:start} are substituted by the workbook
+// at render time and by tools/run_kql_checks.py when testing. '*' means "All" for the multi-select filters.
+let win_days = toint(datetime_diff("day", {TimeRange:end}, {TimeRange:start}));
+let es = AzOutage_EventServices({IncludeSynthetic})
+    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})
+    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
+    | where '*' in ({Category}) or category in ({Category})
+    | where '*' in ({Service}) or service in ({Service})
+    | where '*' in ({Region}) or region in ({Region});
+let avail = AzOutage_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})
+    | where '*' in ({Category}) or category in ({Category})
+    | where '*' in ({Service}) or service_name in ({Service});
+let iv = AzOutage_ResourceIntervals({IncludeSynthetic})
+    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
+    | where '*' in ({Category}) or category in ({Category})
+    | where '*' in ({Service}) or service_name in ({Service})
+    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}
+    | where {IncludeUserInitiated} or not(user_initiated);

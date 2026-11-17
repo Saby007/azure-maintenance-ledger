@@ -1,0 +1,8 @@
+// purpose: the 10 services with the most events, stacked by planned/unplanned.
+// outputs: service, class, events
+//#include _prelude
+let top_services = es | where class in ("Planned", "Unplanned") | summarize total = dcount(tracking_id) by service | top 10 by total desc | project service;
+es
+| where class in ("Planned", "Unplanned") and service in (top_services)
+| summarize events = dcount(tracking_id) by service, class
+| order by service asc

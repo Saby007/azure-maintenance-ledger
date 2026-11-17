@@ -1,0 +1,35 @@
+// AzOutage_DataHealth
+// purpose: ingest freshness, coverage and data-quality indicators for the Data health tab and the stale-ingest check.
+// inputs: includeSynthetic:bool=false
+// outputs: section (ingest|coverage|quality|subscriptions), item, last_success_utc, status, value (long), detail
+let runs = AzOutageIngestHealth_CL
+    | where includeSynthetic or is_synthetic != true
+    | summarize arg_max(ingested_utc, *) by row_key;
+let ingest = runs
+    | where source != "config"
+    | summarize last_run = max(finished_utc), last_success_utc = maxif(finished_utc, status in ("success", "partial")),
+                rows_7d = sumif(rows_written, finished_utc > ago(7d)), last_run_row = arg_max(finished_utc, status) by source
+    | project section = "ingest", item = source, last_success_utc,
+              status = iff(isnull(last_success_utc) or last_success_utc < ago(36h), "STALE", "OK"),
+              value = rows_7d, detail = strcat("last run status: ", status);
+let coverage = union
+    (AzSvcHealthEvents_CL | where includeSynthetic or is_synthetic != true | summarize start = min(impact_start_utc), n = dcount(tracking_id)
+        | project section = "coverage", item = "service health events (earliest impact start)", last_success_utc = datetime(null), status = "info", value = n, detail = tostring(start)),
+    (AzResourceHealthEvents_CL | where includeSynthetic or is_synthetic != true | summarize start = min(event_utc), n = count()
+        | project section = "coverage", item = "resource health events (earliest)", last_success_utc = datetime(null), status = "info", value = n, detail = tostring(start)),
+    (AzPublicPirs_CL | where includeSynthetic or is_synthetic != true | summarize start = min(published_date), n = dcount(tracking_id)
+        | project section = "coverage", item = "public PIRs (earliest published)", last_success_utc = datetime(null), status = "info", value = n, detail = tostring(start)),
+    (AzInventoryCounts_CL | where includeSynthetic or is_synthetic != true | summarize start = min(snapshot_date), n = dcount(snapshot_date)
+        | project section = "coverage", item = "inventory snapshots (earliest)", last_success_utc = datetime(null), status = "info", value = n, detail = tostring(start));
+let quality = AzPublicPirs_CL
+    | where includeSynthetic or is_synthetic != true
+    | summarize arg_max(ingested_utc, *) by tracking_id
+    | summarize failures = countif(parse_status == "unparsed"), total = count()
+    | project section = "quality", item = "PIR window parse failures", last_success_utc = datetime(null),
+              status = iff(failures > 0, "WARN", "OK"), value = tolong(failures), detail = strcat(failures, " of ", total, " PIRs unparsed");
+let configured = toscalar(runs | where source == "config" | summarize arg_max(finished_utc, rows_read) | project rows_read);
+let covered = toscalar(AzInventoryCounts_CL | where (includeSynthetic or is_synthetic != true) and snapshot_date > ago(3d) | summarize dcount(subscription_id));
+let subs = print section = "subscriptions", item = "subscriptions covered vs configured", last_success_utc = datetime(null),
+        status = iff(isnull(configured), "unknown", iff(coalesce(covered, 0) >= configured, "OK", "WARN")),
+        value = tolong(coalesce(covered, 0)), detail = strcat(coalesce(covered, 0), " covered of ", coalesce(configured, long(null)), " configured");
+union ingest, coverage, quality, subs

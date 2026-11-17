@@ -1,0 +1,18 @@
+// purpose: KPI tiles for the PIR benchmark page (Azure-wide, not the customer's estate).
+// outputs: order, metric, value, subtitle, status
+let p = AzOutage_PirBaseline({IncludeSynthetic});
+let total = toscalar(p | count);
+let med = toscalar(p | where isnotnull(duration_h) | summarize round(percentile(duration_h, 50), 1));
+let p90 = toscalar(p | where isnotnull(duration_h) | summarize round(percentile(duration_h, 90), 1));
+let mx = toscalar(p | where isnotnull(duration_h) | summarize round(max(duration_h), 1));
+let last_pir = toscalar(p | summarize max(published_date));
+datatable(order: int)[1, 2, 3, 4, 5]
+| extend metric = case(order == 1, "Public PIRs published", order == 2, "Typical incident (hours)", order == 3, "Long incident, 9 in 10 shorter (hours)",
+                       order == 4, "Longest incident (hours)", "Days since the latest PIR"),
+         value = case(order == 1, todouble(total), order == 2, todouble(med), order == 3, todouble(p90), order == 4, todouble(mx),
+                      todouble(datetime_diff("day", now(), last_pir))),
+         subtitle = case(order == 1, "Azure-wide, broad-impact incidents only", order == 2, "Half of incidents were shorter than this",
+                         order == 3, "Planning figure for a bad incident", order == 4, "Longest window read from a PIR", "Most recent public PIR"),
+         status = "info"
+| project order, metric, value, subtitle, status
+| order by order asc

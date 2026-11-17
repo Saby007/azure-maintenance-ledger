@@ -1,0 +1,7 @@
+// purpose: events by category (distinct TrackingId per category; one event can appear in several categories), stacked by planned/unplanned.
+// outputs: category, class, events
+//#include _prelude
+es
+| where class in ("Planned", "Unplanned")
+| summarize events = dcount(tracking_id) by category, class
+| order by category asc

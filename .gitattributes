@@ -1,0 +1,4 @@
+* text=auto
+*.zip binary
+*.json text eol=lf
+*.bicep text eol=lf

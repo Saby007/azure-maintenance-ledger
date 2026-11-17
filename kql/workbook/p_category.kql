@@ -1,0 +1,4 @@
+// purpose: parameter source - categories from the service catalog. outputs: value, label
+AzOutage_Catalog({IncludeSynthetic})
+| summarize by category
+| project value = category, label = category

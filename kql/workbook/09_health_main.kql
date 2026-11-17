@@ -1,0 +1,7 @@
+// purpose: data health: last ingest per source, coverage start dates, parse failures, subscriptions covered vs configured.
+// outputs: status, section, item, hours_since_success, rows_last_7d, detail
+AzOutage_DataHealth({IncludeSynthetic})
+| extend hours_since_success = iff(isnotnull(last_success_utc), round(todouble(datetime_diff("minute", now(), last_success_utc)) / 60.0, 1), real(null)),
+         rows_last_7d = iff(section == "ingest", value, long(null))
+| project status, section, item, hours_since_success, rows_last_7d, detail
+| order by section asc, item asc

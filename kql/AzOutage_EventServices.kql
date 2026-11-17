@@ -1,0 +1,17 @@
+// AzOutage_EventServices
+// purpose: per-service and per-region view of Service Health events. One row per (event, service, region).
+//          Quotes and backslashes in service/region names are replaced by " / " so the values are safe to pass through Workbook
+//          multi-select filters (the Workbook expands "All" into a quoted list inside the query text).
+//          NEVER sum these rows into a total: use AzOutage_Events() and dcount(tracking_id) for totals (method item 3).
+// inputs: includeSynthetic:bool=false
+// outputs: subscription_id, tracking_id, class, event_type, service, region, category, status, impact_start_utc, impact_end_utc, exposure_h, is_open, event_title
+let cat = AzOutage_Catalog(includeSynthetic) | summarize category = take_any(category) by service = service_name;
+AzOutage_Events(includeSynthetic)
+| extend services = iff(array_length(services) == 0, dynamic(["(unknown)"]), services)
+| extend regions = iff(array_length(regions) == 0, dynamic(["(unknown)"]), regions)
+| mv-expand service = services to typeof(string)
+| mv-expand region = regions to typeof(string)
+| extend service = trim(" ", replace_regex(service, @"\s*[\\'""]+\s*", " / ")), region = trim(" ", replace_regex(region, @"\s*[\\'""]+\s*", " / "))
+| join kind=leftouter cat on service
+| extend category = coalesce(category, "Unmapped")
+| project subscription_id, tracking_id, class, event_type, service, region, category, status, impact_start_utc, impact_end_utc, exposure_h, is_open, event_title

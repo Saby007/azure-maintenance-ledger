@@ -1,0 +1,6 @@
+// purpose: report sheet - AzOutage_Events within the report window. outputs: see AzOutage_Events
+AzOutage_Events(false)
+| where impact_start_utc > ago({WindowDays}d)
+| project-away services, regions
+| order by impact_start_utc desc
+| take 5000

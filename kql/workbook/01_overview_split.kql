@@ -1,0 +1,7 @@
+// purpose: planned vs unplanned split (donut). Events counted once per tracking ID.
+// outputs: class, events
+//#include _prelude
+es
+| where class in ("Planned", "Unplanned")
+| summarize events = dcount(tracking_id) by class
+| order by class asc

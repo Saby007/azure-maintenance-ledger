@@ -1,0 +1,9 @@
+// purpose: the longest events in the selected range. Exposure is the event window, NOT downtime.
+// outputs: status, class, event_title, services, started, exposure_h
+//#include _prelude
+es
+| where class in ("Planned", "Unplanned")
+| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), services = strcat_array(make_set(service, 3), ", "),
+            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class
+| top 15 by exposure_h desc
+| project status = iff(is_open == 1, "Open", "Resolved"), class, event_title, services, started, exposure_h

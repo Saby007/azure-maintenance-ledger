@@ -1,0 +1,12 @@
+// AzOutage_Catalog
+// purpose: newest-load editable service catalog (reference/service_catalog.csv loaded by tools/load_reference.py). One row per (service, ARM type).
+// inputs: includeSynthetic:bool=false
+// outputs: service_name, arm_type (lower-case), category, sla_percent (null = SLA not set), sla_source_url, sla_verified_on, notes
+let newest_load = toscalar(AzServiceCatalog_CL | where includeSynthetic or is_synthetic != true | summarize max(ingested_utc));
+AzServiceCatalog_CL
+| where (includeSynthetic or is_synthetic != true) and ingested_utc == newest_load
+| summarize arg_max(ingested_utc, *) by row_key
+| extend arm_type = split(tolower(arm_resource_types), ";")
+| mv-expand arm_type to typeof(string)
+| extend arm_type = trim(" ", arm_type)
+| project service_name, arm_type, category, sla_percent, sla_source_url, sla_verified_on, notes

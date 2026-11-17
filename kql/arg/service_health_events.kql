@@ -1,0 +1,20 @@
+// purpose: Service Health events visible to the given subscriptions (one row per subscription x event). Ticks converted here.
+// inputs: ARG subscriptions scope
+// outputs: subscription_id, tracking_id, event_type, status, level, title, summary, impact_start_utc, impact_end_utc, last_update_utc,
+//          platform_initiated, tags, impact (dynamic: [{ImpactedService, ImpactedRegions[{ImpactedRegion, Status}]}])
+ServiceHealthResources
+| where type =~ "microsoft.resourcehealth/events"
+| extend p = properties
+| project subscription_id = subscriptionId,
+          tracking_id = coalesce(tostring(p.TrackingId), name),
+          event_type = tostring(p.EventType),
+          status = tostring(p.Status),
+          level = tostring(p.Level),
+          title = tostring(p.Title),
+          summary = substring(tostring(p.Summary), 0, 4000),
+          impact_start_utc = todatetime(tolong(p.ImpactStartTime)),
+          impact_end_utc = todatetime(tolong(p.ImpactMitigationTime)),
+          last_update_utc = todatetime(tolong(p.LastUpdateTime)),
+          platform_initiated = tobool(p.PlatformInitiated),
+          tags = tostring(p.EventTags),
+          impact = parse_json(tostring(p.Impact))

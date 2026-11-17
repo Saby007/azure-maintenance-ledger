@@ -1,0 +1,13 @@
+.env
+.venv/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+local.settings.json
+exports/
+cache/
+reports/
+*.zip
+!release/app.zip

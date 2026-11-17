@@ -1,0 +1,9 @@
+// purpose: Resource Health downtime intervals per resource (drill-down). User-initiated hidden unless IncludeUserInitiated.
+// outputs: status (Ongoing|Recovered|Stale), resource, service_name, state, class, start_utc, end_utc, minutes, cause, classification_basis
+//#include _prelude
+iv
+| extend status = case(stale_open, "Stale (not counted)", is_open, "Ongoing", "Recovered"),
+         resource = tostring(split(resource_id, "/")[-1])
+| project status, resource, service_name, state, class, start_utc, end_utc = iff(is_open, datetime(null), end_utc), minutes, cause, classification_basis
+| order by start_utc desc
+| take 500

@@ -1,0 +1,18 @@
+// purpose: VM Resource Health annotations (Planned/Unplanned, platform vs user initiated). Latest state + 14 days of changes only.
+// UNVERIFIED in the sandbox (no VMs): property names follow AGENTS.md A2; module is behind AOL_ENABLE_VM_ANNOTATIONS.
+// outputs: subscription_id, resource_id, region, annotation_name, category, context, reason, availability_state, previous_availability_state, occurred_utc, summary
+HealthResources
+| where type =~ "microsoft.resourcehealth/resourceannotations"
+| extend p = properties
+| extend resource_id = tolower(tostring(split(id, "/providers/Microsoft.ResourceHealth/", 0)[0]))
+| project subscription_id = subscriptionId,
+          resource_id,
+          region = location,
+          annotation_name = tostring(p.annotationName),
+          category = tostring(p.category),
+          context = tostring(p.context),
+          reason = tostring(p.reason),
+          availability_state = tostring(p.availabilityState),
+          previous_availability_state = tostring(p.previousAvailabilityState),
+          occurred_utc = todatetime(p.occurredTime),
+          summary = substring(tostring(p.summary), 0, 1000)

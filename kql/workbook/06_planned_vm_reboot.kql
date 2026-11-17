@@ -1,0 +1,9 @@
+// purpose: planned VM maintenance annotations (reboot required indicator comes from the annotation reason/name).
+// outputs: resource_id, region, annotation_name, reason, context, occurred_utc, reboot_mentioned
+AzVmAnnotations_CL
+| where {IncludeSynthetic} or is_synthetic != true
+| where category =~ "Planned" and occurred_utc between ({TimeRange:start} .. {TimeRange:end})
+| where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
+| summarize arg_max(ingested_utc, *) by row_key
+| project resource_id, region, annotation_name, reason, context, occurred_utc, reboot_mentioned = (reason has "reboot" or annotation_name has "reboot")
+| order by occurred_utc desc

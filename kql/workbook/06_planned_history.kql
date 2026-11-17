@@ -1,0 +1,8 @@
+// purpose: planned maintenance history in the selected range: scheduled window, notice lead time (lower bound), realised downtime from Resource Health overlap.
+// outputs: event_title, services, window_start_utc, scheduled_h, lead_time_days, realised_downtime_min (null = not measured), affected_resources
+AzOutage_Planned({IncludeSynthetic})
+| where not(upcoming) and window_start_utc between ({TimeRange:start} .. {TimeRange:end})
+| where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
+| summarize arg_min(window_start_utc, *) by tracking_id
+| project event_title, services = strcat_array(services, ", "), window_start_utc, scheduled_h, lead_time_days, realised_downtime_min, affected_resources
+| order by window_start_utc desc

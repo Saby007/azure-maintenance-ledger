@@ -1,0 +1,12 @@
+window_days: 365
+min_window_days: 90
+simulations: 10000
+seed: null            # set an integer for reproducible runs
+confidence:
+  insufficient_below_n: 3
+  insufficient_below_window_days: 90
+  low_max_n: 5
+  low_below_window_days: 365
+  medium_max_n: 11
+  high_min_n: 12
+  high_min_window_days: 365

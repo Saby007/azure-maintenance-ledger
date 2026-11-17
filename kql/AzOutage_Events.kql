@@ -1,0 +1,48 @@
+// AzOutage_Events
+// purpose: one row per (subscription, TrackingId): the preferred source row (arg > rest > activitylog), deduplicated.
+//          Count events with dcount(tracking_id) (method item 3). Class: Unplanned = ServiceIssue, Planned = PlannedMaintenance, Advisory = the rest.
+// inputs: includeSynthetic:bool=false
+// outputs: subscription_id, tracking_id, event_type, class, status, level, event_title, impact_start_utc, impact_end_utc, last_update_utc,
+//          first_seen_utc, services, regions, source, platform_initiated, exposure_h (window, NOT downtime), end_basis, is_open
+//          end_basis: mitigation_time | last_update (resolved but no mitigation time published: window ends at the last update) | open (ends now)
+let ledger = AzSvcHealthEvents_CL
+    | where includeSynthetic or is_synthetic != true
+    | summarize arg_max(ingested_utc, *) by row_key
+    | project subscription_id, tracking_id, event_type, status, level, event_title, impact_start_utc, impact_end_utc,
+              last_update_utc, platform_initiated, services, regions, source;
+let activity = union isfuzzy=true
+    (AzureActivity
+        | where CategoryValue == "ServiceHealth"
+        | extend p = todynamic(Properties)
+        | extend incident = tostring(p.incidentType)
+        | project subscription_id = tostring(SubscriptionId),
+                  tracking_id = tostring(p.trackingId),
+                  event_type = case(incident == "Incident", "ServiceIssue",
+                                    incident == "Maintenance", "PlannedMaintenance",
+                                    incident == "Security", "SecurityAdvisory",
+                                    "HealthAdvisory"),
+                  status = tostring(p.stage),
+                  level = tostring(Level),
+                  event_title = tostring(p["title"]),
+                  impact_start_utc = todatetime(p.impactStartTime),
+                  impact_end_utc = todatetime(coalesce(tostring(p.impactMitigationTime), tostring(p.endTime))),
+                  last_update_utc = TimeGenerated,
+                  platform_initiated = true,
+                  services = pack_array(tostring(p.service)),
+                  regions = pack_array(tostring(p.region)),
+                  source = "activitylog"),
+    (ledger | take 0);
+let rows = union ledger, activity | where isnotempty(tracking_id);
+let first_seen = rows | summarize first_seen_utc = min(last_update_utc) by subscription_id, tracking_id;
+rows
+| extend src_rank = case(source == "arg", 1, source == "rest", 2, 3)
+| summarize arg_max(last_update_utc, *) by subscription_id, tracking_id, source
+| summarize arg_min(src_rank, *) by subscription_id, tracking_id
+| join kind=leftouter first_seen on subscription_id, tracking_id
+| extend class = case(event_type =~ "ServiceIssue", "Unplanned", event_type =~ "PlannedMaintenance", "Planned", "Advisory"),
+         is_open = status !in~ ("Resolved", "Complete", "Completed", "Mitigated")
+| extend end_eff = case(isnotnull(impact_end_utc), impact_end_utc, is_open, now(), last_update_utc),
+         end_basis = case(isnotnull(impact_end_utc), "mitigation_time", is_open, "open", "last_update")
+| extend exposure_h = round(todouble(datetime_diff("minute", end_eff, impact_start_utc)) / 60.0, 2)
+| project subscription_id, tracking_id, event_type, class, status, level, event_title, impact_start_utc, impact_end_utc, last_update_utc,
+          first_seen_utc, services, regions, source, platform_initiated, exposure_h, end_basis, is_open

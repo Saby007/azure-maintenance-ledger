@@ -1,0 +1,30 @@
+// purpose: KPI tiles for the Overview page. One row per tile: metric, value (number), subtitle, status (good|warn|bad|info).
+//          Events are counted once per tracking ID. Exposure is the sum of event windows and is NOT downtime.
+// outputs: order, metric, value, subtitle, status
+//#include _prelude
+let ev = es | summarize exposure_h = max(exposure_h), is_open = max(toint(is_open)) by tracking_id, class;
+let unplanned = toscalar(ev | where class == "Unplanned" | summarize dcount(tracking_id));
+let planned = toscalar(ev | where class == "Planned" | summarize dcount(tracking_id));
+let exposure = toscalar(ev | where class == "Unplanned" | summarize round(sum(exposure_h), 1));
+let open_n = toscalar(ev | where is_open == 1 and class in ("Planned", "Unplanned") | summarize dcount(tracking_id));
+let down_min = toscalar(iv | where state =~ "Unavailable" and not(stale_open) | summarize round(coalesce(sum(minutes), 0.0), 1));
+let av = toscalar(avail | summarize d = sum(downtime_min), r = sum(resources) | project a = iff(r > 0, round((1.0 - d / (r * win_days * 1440.0)) * 100.0, 3), real(null)));
+datatable(order: int)[1, 2, 3, 4, 5, 6]
+| extend metric = case(order == 1, "Unplanned events", order == 2, "Planned maintenance", order == 3, "Observed downtime (minutes)",
+                       order == 4, "Observed availability (%)", order == 5, "Open right now", "Event time open (hours)"),
+         value = case(order == 1, todouble(unplanned), order == 2, todouble(planned), order == 3, todouble(down_min),
+                      order == 4, todouble(av), order == 5, todouble(open_n), todouble(exposure)),
+         subtitle = case(order == 1, "Azure incidents nobody scheduled",
+                         order == 2, "Maintenance Azure announced in advance",
+                         order == 3, "Minutes your resources were reported Unavailable",
+                         order == 4, iff(isnull(av), "No resource inventory yet", "Share of time your resources were up"),
+                         order == 5, "Incidents and maintenance not yet resolved",
+                         "How long events were open (not downtime)"),
+         status = case(order == 1, iff(unplanned == 0, "good", "warn"),
+                       order == 2, "info",
+                       order == 3, iff(down_min == 0, "good", "warn"),
+                       order == 4, iff(isnull(av), "info", iff(av >= 99.9, "good", iff(av >= 99.0, "warn", "bad"))),
+                       order == 5, iff(open_n == 0, "good", "warn"),
+                       "info")
+| project order, metric, value, subtitle, status
+| order by order asc

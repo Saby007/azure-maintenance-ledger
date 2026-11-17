@@ -1,0 +1,17 @@
+// purpose: unplanned Service Health events per (service, region) with Resource Health downtime overlapping the event window.
+//          Events still open are excluded: their duration is not known yet.
+// outputs: tracking_id, service, region, category, sh_minutes (exposure window), rh_minutes (null = not measured)
+let ev = AzOutage_EventServices()
+    | where class == "Unplanned" and impact_start_utc > ago(365d) and not(is_open)
+    | extend ev_end = impact_start_utc + 1h * exposure_h;
+let iv = AzOutage_ResourceIntervals()
+    | where state =~ "Unavailable" and not(user_initiated) and not(stale_open)
+    | project subscription_id, service_name, start_utc, end_utc;
+ev
+| join kind=leftouter iv on subscription_id, $left.service == $right.service_name
+| extend overlap_min = iff(isnotnull(start_utc) and start_utc < ev_end and end_utc > impact_start_utc,
+                           todouble(datetime_diff("second", min_of(end_utc, ev_end), max_of(start_utc, impact_start_utc))) / 60.0, real(null))
+| summarize rh_minutes = sum(overlap_min), sh_minutes = max(exposure_h * 60.0)
+    by tracking_id, subscription_id, service, region, category
+| summarize rh_minutes = max(rh_minutes), sh_minutes = max(sh_minutes) by tracking_id, service, region, category
+| extend rh_minutes = iff(rh_minutes > 0, rh_minutes, real(null))

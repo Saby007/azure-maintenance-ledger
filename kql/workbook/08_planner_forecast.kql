@@ -1,0 +1,5 @@
+// purpose: expected-downtime planning range for the chosen service/region (all fallback scopes) plus the Azure-wide PIR baseline.
+// outputs: basis, scope_level, scope_key, n_events, window_days, confidence, events_per_year, p50_annual_h, p90_annual_h, mean_over_horizon_h, duration_basis, note
+//#include _planner_base
+rows
+| project basis, scope_level, scope_key, n_events, window_days, confidence, events_per_year, p50_annual_h, p90_annual_h, mean_over_horizon_h, duration_basis, note

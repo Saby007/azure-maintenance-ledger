@@ -1,0 +1,12 @@
+// AzOutage_CompositeSla
+// purpose: composite SLA of several components. serial = product of availabilities; redundant = 1 - product of (1 - availability).
+// inputs: slas:dynamic (array of SLA percentages, e.g. dynamic([99.95, 99.99])), mode:string ("serial" | "redundant")
+// outputs: availability_pct, allowance_h_per_year (8760 h year), allowance_min_per_year
+print slas = slas
+| mv-apply s = slas to typeof(real) on (
+    summarize ln_serial = sum(log(s / 100.0)), ln_unavail = sum(log(1.0 - s / 100.0))
+  )
+| extend availability = iff(mode == "redundant", 1.0 - exp(ln_unavail), exp(ln_serial))
+| project availability_pct = availability * 100.0,
+          allowance_h_per_year = (1.0 - availability) * 8760.0,
+          allowance_min_per_year = (1.0 - availability) * 8760.0 * 60.0

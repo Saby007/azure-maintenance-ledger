@@ -1,0 +1,6 @@
+// purpose: Azure-wide typical (P50) and bad (P90) year per category from public PIRs. NOT the customer's estate.
+// outputs: scope_key, p50_annual_h, p90_annual_h, n_events, confidence
+AzOutage_Forecast({IncludeSynthetic})
+| where baseline == "public_pir" and scope_key != "(all categories)"
+| project scope_key, p50_annual_h, p90_annual_h, n_events, confidence
+| order by p90_annual_h desc

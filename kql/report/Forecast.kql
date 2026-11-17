@@ -1,0 +1,3 @@
+// purpose: report sheet - AzOutage_Forecast planning ranges (evidence, not a guarantee; each row carries n, window and confidence).
+AzOutage_Forecast(false)
+| order by baseline asc, scope_level asc, scope_key asc

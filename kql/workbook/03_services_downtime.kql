@@ -1,0 +1,7 @@
+// purpose: the 10 services with the most unavailable minutes (user-initiated and stale intervals excluded).
+// outputs: service_name, downtime_min
+//#include _prelude
+avail
+| where downtime_min > 0
+| top 10 by downtime_min desc
+| project service_name, downtime_min

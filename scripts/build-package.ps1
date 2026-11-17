@@ -1,0 +1,48 @@
+#Requires -Version 7
+<#
+.SYNOPSIS  Builds release\app.zip, the collector code package that the one-click template deploys (OneDeploy, remote build).
+.DESCRIPTION
+  Layout (Azure Functions Python v2): function_app.py at the root plus collector\, analytics\, kql\, config\, reference\,
+  requirements.txt and host.json. Entry names use forward slashes (required for the Linux host). Commit release\app.zip
+  after changing anything under src\, kql\, config\ or reference\ - the Deploy to Azure button downloads it from the repo.
+#>
+[CmdletBinding()]
+param([string]$Output = (Join-Path (Split-Path $PSScriptRoot -Parent) 'release\app.zip'))
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+$root = Split-Path $PSScriptRoot -Parent
+$stage = Join-Path $root 'dist\app'
+if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+New-Item -ItemType Directory $stage -Force | Out-Null
+
+Copy-Item (Join-Path $root 'src\collector') (Join-Path $stage 'collector') -Recurse
+Copy-Item (Join-Path $root 'src\analytics') (Join-Path $stage 'analytics') -Recurse
+Copy-Item (Join-Path $root 'src\collector\function_app.py') (Join-Path $stage 'function_app.py')
+foreach ($d in 'kql', 'config', 'reference') { Copy-Item (Join-Path $root $d) (Join-Path $stage $d) -Recurse }
+# openpyxl is only needed for the quarterly report, not for the Function app
+(Get-Content (Join-Path $root 'requirements.txt') | Where-Object { $_ -notmatch '^\s*openpyxl' }) | Set-Content (Join-Path $stage 'requirements.txt') -Encoding utf8
+@'
+{
+  "version": "2.0",
+  "extensionBundle": { "id": "Microsoft.Azure.Functions.ExtensionBundle", "version": "[4.*, 5.0.0)" },
+  "logging": { "logLevel": { "default": "Information", "Azure.Core": "Warning", "Azure": "Warning" } }
+}
+'@ | Set-Content (Join-Path $stage 'host.json') -Encoding utf8
+Get-ChildItem $stage -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+Get-ChildItem $stage -Recurse -File -Include *.pyc | Remove-Item -Force
+
+New-Item -ItemType Directory (Split-Path $Output -Parent) -Force | Out-Null
+if (Test-Path $Output) { Remove-Item $Output }
+$zip = [System.IO.Compression.ZipFile]::Open($Output, 'Create')
+try {
+  $base = (Resolve-Path $stage).Path.TrimEnd('\') + '\'
+  Get-ChildItem $stage -Recurse -File | Sort-Object FullName | ForEach-Object {
+    $rel = $_.FullName.Substring($base.Length).Replace('\', '/')
+    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, $rel, 'Optimal')
+  }
+} finally { $zip.Dispose() }
+$z = [System.IO.Compression.ZipFile]::OpenRead($Output)
+"Built $Output ($([math]::Round((Get-Item $Output).Length / 1KB)) KB, $($z.Entries.Count) files)"
+$z.Entries | Where-Object { $_.FullName -in 'function_app.py', 'host.json', 'requirements.txt' } | ForEach-Object { "  $($_.FullName)" }
+$z.Dispose()
+Remove-Item (Join-Path $root 'dist') -Recurse -Force
