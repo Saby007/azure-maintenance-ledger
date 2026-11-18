@@ -1,0 +1,6 @@
+// purpose: time of the last successful (or partial) run of a collector source.
+// inputs: {KEY} replaced by the collector
+// outputs: last_success (null if never)
+AzMaintenanceIngestHealth_CL
+| where is_synthetic != true and source == "{KEY}" and status in ("success", "partial")
+| summarize last_success = max(finished_utc)

@@ -1,6 +1,6 @@
 // purpose: KPI tiles for the Planned maintenance page. Planned windows are scheduled windows, NOT downtime.
 // outputs: order, metric, value, subtitle, status
-let p = AzOutage_Planned({IncludeSynthetic})
+let p = AzMaintenance_Planned({IncludeSynthetic})
     | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
     | summarize arg_min(window_start_utc, *) by tracking_id;
 let in_range = p | where not(upcoming) and window_start_utc between ({TimeRange:start} .. {TimeRange:end});

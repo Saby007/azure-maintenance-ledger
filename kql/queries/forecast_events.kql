@@ -1,10 +1,10 @@
 // purpose: unplanned Service Health events per (service, region) with Resource Health downtime overlapping the event window.
 //          Events still open are excluded: their duration is not known yet.
 // outputs: tracking_id, service, region, category, sh_minutes (exposure window), rh_minutes (null = not measured)
-let ev = AzOutage_EventServices()
+let ev = AzMaintenance_EventServices()
     | where class == "Unplanned" and impact_start_utc > ago(365d) and not(is_open)
     | extend ev_end = impact_start_utc + 1h * exposure_h;
-let iv = AzOutage_ResourceIntervals()
+let iv = AzMaintenance_ResourceIntervals()
     | where state =~ "Unavailable" and not(user_initiated) and not(stale_open)
     | project subscription_id, service_name, start_utc, end_utc;
 ev

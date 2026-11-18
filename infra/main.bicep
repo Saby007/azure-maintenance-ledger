@@ -1,4 +1,4 @@
-// Azure Outage Ledger - resource-group deployment. The per-subscription Activity Log export is infra/export.bicep.
+// Azure Maintenance Ledger - resource-group deployment. The per-subscription Activity Log export is infra/export.bicep.
 targetScope = 'resourceGroup'
 
 param location string = resourceGroup().location
@@ -11,14 +11,13 @@ param retentionDays int = 730
 @description('Workspace daily ingestion cap in GB (-1 = none).')
 param dailyCapGb string = '0.5'
 param alertEmail string = ''
-param pythonVersion string = '3.14'
 @description('Comma-separated subscription ids the collector reads. Empty = config/subscriptions.json in the package.')
 param subscriptionIds string = ''
-@description('Public URL of the collector code package (zip). Empty = do not deploy code (use scripts/deploy-code.ps1).')
-param codePackageUri string = ''
+@description('Public URL of the collector code package (zip) the scheduled job downloads at each run. Pin it to a commit or tag URL to control updates.')
+param packageUri string = 'https://raw.githubusercontent.com/Saby007/azure-maintenance-ledger/main/release/app.zip'
 
 @description('Module flags')
-param deployFunctionApp bool = true
+param deployCollector bool = true
 param deployKqlFunctions bool = true
 param deployWorkbook bool = true
 param enableStaleAlert bool = true
@@ -27,7 +26,7 @@ param budgetAmountUsd int = 10
 param enablePirs bool = true
 param enableVmAnnotations bool = true
 
-var tags = { app: 'azure-outage-ledger' }
+var tags = { app: 'azure-maintenance-ledger' }
 var workspaceName = workspaceMode == 'new' ? '${prefix}-law' : existingWorkspaceName
 var workspaceResourceGroup = workspaceMode == 'new' ? resourceGroup().name : existingWorkspaceResourceGroup
 
@@ -71,13 +70,14 @@ var enabledSources = concat(
   enableVmAnnotations ? ['vm_annotations'] : []
 )
 
-module func 'modules/functionapp.bicep' = if (deployFunctionApp) {
-  name: 'functionapp'
+module collector 'modules/collectorjob.bicep' = if (deployCollector) {
+  name: 'collector-job'
   params: {
     location: location
     prefix: prefix
+    workspaceId: workspace.outputs.id
+    packageUri: packageUri
     tags: tags
-    pythonVersion: pythonVersion
     appSettings: {
       AOL_DCR_ENDPOINT: dcr.outputs.logsIngestionEndpoint
       AOL_DCR_IMMUTABLE_ID: dcr.outputs.immutableId
@@ -89,34 +89,34 @@ module func 'modules/functionapp.bicep' = if (deployFunctionApp) {
   }
 }
 
-module rbac 'modules/rbac.bicep' = if (deployFunctionApp) {
+module rbac 'modules/rbac.bicep' = if (deployCollector) {
   name: 'rbac'
   params: {
-    principalId: func.?outputs.principalId ?? ''
+    principalId: collector.?outputs.principalId ?? ''
     dcrName: dcr.outputs.name
   }
 }
 
-module rbacWorkspace 'modules/rbac-workspace.bicep' = if (deployFunctionApp) {
+module rbacWorkspace 'modules/rbac-workspace.bicep' = if (deployCollector) {
   name: 'rbac-workspace'
   scope: resourceGroup(workspaceResourceGroup)
   params: {
-    principalId: func.?outputs.principalId ?? ''
+    principalId: collector.?outputs.principalId ?? ''
     workspaceName: workspace.outputs.name
   }
 }
 
 var kqlFiles = [
-  { name: 'AzOutage_Catalog', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_Catalog.kql') }
-  { name: 'AzOutage_Events', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_Events.kql') }
-  { name: 'AzOutage_EventServices', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_EventServices.kql') }
-  { name: 'AzOutage_Planned', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_Planned.kql') }
-  { name: 'AzOutage_ResourceIntervals', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_ResourceIntervals.kql') }
-  { name: 'AzOutage_Availability', parameters: 'windowDays:int=365, includeUserInitiated:bool=false, includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_Availability.kql') }
-  { name: 'AzOutage_PirBaseline', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_PirBaseline.kql') }
-  { name: 'AzOutage_Forecast', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_Forecast.kql') }
-  { name: 'AzOutage_DataHealth', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzOutage_DataHealth.kql') }
-  { name: 'AzOutage_CompositeSla', parameters: 'slas:dynamic, mode:string="serial"', query: loadTextContent('../kql/AzOutage_CompositeSla.kql') }
+  { name: 'AzMaintenance_Catalog', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_Catalog.kql') }
+  { name: 'AzMaintenance_Events', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_Events.kql') }
+  { name: 'AzMaintenance_EventServices', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_EventServices.kql') }
+  { name: 'AzMaintenance_Planned', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_Planned.kql') }
+  { name: 'AzMaintenance_ResourceIntervals', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_ResourceIntervals.kql') }
+  { name: 'AzMaintenance_Availability', parameters: 'windowDays:int=365, includeUserInitiated:bool=false, includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_Availability.kql') }
+  { name: 'AzMaintenance_PirBaseline', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_PirBaseline.kql') }
+  { name: 'AzMaintenance_Forecast', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_Forecast.kql') }
+  { name: 'AzMaintenance_DataHealth', parameters: 'includeSynthetic:bool=false', query: loadTextContent('../kql/AzMaintenance_DataHealth.kql') }
+  { name: 'AzMaintenance_CompositeSla', parameters: 'slas:dynamic, mode:string="serial"', query: loadTextContent('../kql/AzMaintenance_CompositeSla.kql') }
 ]
 
 module kql 'modules/kqlfunctions.bicep' = if (deployKqlFunctions) {
@@ -166,20 +166,9 @@ module budget 'modules/budget.bicep' = if (enableBudget && !empty(alertEmail)) {
   }
 }
 
-// Code is deployed last: the dependencies give the function identity's storage/DCR/workspace roles time to propagate.
-module codeDeploy 'modules/codedeploy.bicep' = if (deployFunctionApp && !empty(codePackageUri)) {
-  name: 'code-deploy'
-  params: {
-    functionAppName: func.?outputs.appName ?? ''
-    packageUri: codePackageUri
-  }
-  dependsOn: [rbac, rbacWorkspace, tables, kql, workbook, alert]
-}
-
 output workspaceResourceId string = workspace.outputs.id
 output workspaceCustomerId string = workspace.outputs.customerId
 output dcrImmutableId string = dcr.outputs.immutableId
 output dcrEndpoint string = dcr.outputs.logsIngestionEndpoint
-output functionAppName string = func.?outputs.appName ?? ''
-output functionPrincipalId string = func.?outputs.principalId ?? ''
-output stateAccountUrl string = func.?outputs.stateAccountUrl ?? ''
+output collectorJobName string = collector.?outputs.jobName ?? ''
+output collectorPrincipalId string = collector.?outputs.principalId ?? ''

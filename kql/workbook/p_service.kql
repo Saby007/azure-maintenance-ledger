@@ -1,7 +1,7 @@
 // purpose: parameter source - services seen in events or in the catalog. outputs: value, label
 union
-    (AzOutage_EventServices({IncludeSynthetic}) | summarize by service),
-    (AzOutage_Catalog({IncludeSynthetic}) | summarize by service = service_name)
+    (AzMaintenance_EventServices({IncludeSynthetic}) | summarize by service),
+    (AzMaintenance_Catalog({IncludeSynthetic}) | summarize by service = service_name)
 | summarize by service
 | project value = service, label = service
 | order by label asc

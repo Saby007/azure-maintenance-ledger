@@ -1,4 +1,4 @@
-// AzOutage_PirBaseline
+// AzMaintenance_PirBaseline
 // purpose: public Azure PIRs (Azure-wide, NOT the customer's estate). One row per PIR with the parsed incident window.
 // inputs: includeSynthetic:bool=false
 // outputs: tracking_id, published_date, year, event_title, category, window_start_utc, window_end_utc, duration_h, parse_status, parse_note

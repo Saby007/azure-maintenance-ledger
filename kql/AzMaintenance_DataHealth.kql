@@ -1,9 +1,10 @@
-// AzOutage_DataHealth
+// AzMaintenance_DataHealth
 // purpose: ingest freshness, coverage and data-quality indicators for the Data health tab and the stale-ingest check.
 // inputs: includeSynthetic:bool=false
 // outputs: section (ingest|coverage|quality|subscriptions), item, last_success_utc, status, value (long), detail
-let runs = AzOutageIngestHealth_CL
+let runs = AzMaintenanceIngestHealth_CL
     | where includeSynthetic or is_synthetic != true
+    | where not(source startswith "state:")
     | summarize arg_max(ingested_utc, *) by row_key;
 let ingest = runs
     | where source != "config"

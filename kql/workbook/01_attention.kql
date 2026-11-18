@@ -4,8 +4,8 @@
 let open_u = toscalar(es | where is_open and class == "Unplanned" | summarize dcount(tracking_id));
 let down_now = toscalar(iv | where state =~ "Unavailable" and is_open and not(stale_open) | summarize dcount(resource_id));
 let recent = toscalar(es | where class == "Unplanned" and impact_start_utc > ago(7d) | summarize dcount(tracking_id));
-let soon = toscalar(AzOutage_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));
-let stale_src = toscalar(AzOutage_DataHealth({IncludeSynthetic}) | where section == "ingest" and status == "STALE" | summarize count());
+let soon = toscalar(AzMaintenance_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));
+let stale_src = toscalar(AzMaintenance_DataHealth({IncludeSynthetic}) | where section == "ingest" and status == "STALE" | summarize count());
 datatable(order: int)[1, 2, 3, 4, 5]
 | extend status = case(order == 1, iff(open_u > 0, "bad", "good"),
                        order == 2, iff(down_now > 0, "bad", "good"),

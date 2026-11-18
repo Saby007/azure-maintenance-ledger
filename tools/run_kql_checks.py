@@ -1,9 +1,9 @@
-"""Runs every workbook query and every AzOutage_* function against the sandbox workspace and fails on any error.
+"""Runs every workbook query and every AzMaintenance_* function against the sandbox workspace and fails on any error.
 
   python tools/run_kql_checks.py [--synthetic] [--workspace <customerId>]
 
 Queries are rendered with wbkql.TEST_TOKENS (all filters = All). With --synthetic the queries run with includeSynthetic=true so
-rows loaded by tools/seed_fixtures.py are visible. Also verifies the SLA test vectors in KQL (AzOutage_CompositeSla).
+rows loaded by tools/seed_fixtures.py are visible. Also verifies the SLA test vectors in KQL (AzMaintenance_CompositeSla).
 """
 
 from __future__ import annotations
@@ -24,16 +24,16 @@ from collector.backfill import load_env  # noqa: E402
 from collector.forecast_job import LogsReader  # noqa: E402
 
 FUNCTIONS = [
-    "AzOutage_Catalog({s})",
-    "AzOutage_Events({s})",
-    "AzOutage_EventServices({s})",
-    "AzOutage_Planned({s})",
-    "AzOutage_ResourceIntervals({s})",
-    "AzOutage_Availability(365, false, {s})",
-    "AzOutage_Availability(90, true, {s})",
-    "AzOutage_PirBaseline({s})",
-    "AzOutage_Forecast({s})",
-    "AzOutage_DataHealth({s})",
+    "AzMaintenance_Catalog({s})",
+    "AzMaintenance_Events({s})",
+    "AzMaintenance_EventServices({s})",
+    "AzMaintenance_Planned({s})",
+    "AzMaintenance_ResourceIntervals({s})",
+    "AzMaintenance_Availability(365, false, {s})",
+    "AzMaintenance_Availability(90, true, {s})",
+    "AzMaintenance_PirBaseline({s})",
+    "AzMaintenance_Forecast({s})",
+    "AzMaintenance_DataHealth({s})",
 ]
 
 SLA_VECTORS = [
@@ -62,7 +62,7 @@ def assert_synthetic(reader: LogsReader, results: list) -> None:
     def expect(label: str, cond: bool, info: object) -> None:
         results.append((f"assert:{label}", "ok" if cond else "FAIL", info))
 
-    iv = reader.rows(f"AzOutage_ResourceIntervals(true) | where subscription_id == '{sub}'")
+    iv = reader.rows(f"AzMaintenance_ResourceIntervals(true) | where subscription_id == '{sub}'")
     expect("intervals present", len(iv) >= 7, len(iv))
     by_res = {r["resource_id"].rsplit("/", 1)[-1]: r for r in iv}
     expect("vm1 duplicate rows merged = 30 min", abs(by_res["vm1"]["minutes"] - 30) < 0.01, by_res["vm1"]["minutes"])
@@ -73,23 +73,23 @@ def assert_synthetic(reader: LogsReader, results: list) -> None:
     expect("vm6 classified Planned by overlap", by_res["vm6"]["class"] == "Planned", by_res["vm6"]["classification_basis"])
     expect("sql1 mapped to Azure SQL Database", by_res["sql1"]["service_name"] == "Azure SQL Database", by_res["sql1"]["service_name"])
 
-    ev = reader.rows(f"AzOutage_Events(true) | where subscription_id == '{sub}' | summarize n = dcount(tracking_id) by class")
+    ev = reader.rows(f"AzMaintenance_Events(true) | where subscription_id == '{sub}' | summarize n = dcount(tracking_id) by class")
     counts = {r["class"]: r["n"] for r in ev}
     expect("event counts (4 unplanned, 2 planned, 1 advisory)", counts == {"Unplanned": 4, "Planned": 2, "Advisory": 1}, counts)
-    u1 = reader.rows(f"AzOutage_Events(true) | where subscription_id == '{sub}' and tracking_id == 'SYN-U1'")
+    u1 = reader.rows(f"AzMaintenance_Events(true) | where subscription_id == '{sub}' and tracking_id == 'SYN-U1'")
     expect("source precedence arg > rest, one row", len(u1) == 1 and u1[0]["source"] == "arg" and abs(u1[0]["exposure_h"] - 2.0) < 0.01, u1[0]["source"] if u1 else None)
-    es = reader.rows(f"AzOutage_EventServices(true) | where subscription_id == '{sub}' and tracking_id == 'SYN-U2' | summarize rows = count(), events = dcount(tracking_id)")
+    es = reader.rows(f"AzMaintenance_EventServices(true) | where subscription_id == '{sub}' and tracking_id == 'SYN-U2' | summarize rows = count(), events = dcount(tracking_id)")
     expect("per-region expansion does not inflate event count", es and es[0]["rows"] == 2 and es[0]["events"] == 1, es)
 
-    pl = {r["tracking_id"]: r for r in reader.rows(f"AzOutage_Planned(true) | where subscription_id == '{sub}'")}
+    pl = {r["tracking_id"]: r for r in reader.rows(f"AzMaintenance_Planned(true) | where subscription_id == '{sub}'")}
     expect("planned lead time 5 d", abs(pl["SYN-P1"]["lead_time_days"] - 5.0) < 0.05, pl["SYN-P1"]["lead_time_days"])
     expect("planned realised downtime 15 min", abs((pl["SYN-P1"]["realised_downtime_min"] or 0) - 15) < 0.01, pl["SYN-P1"]["realised_downtime_min"])
     expect("upcoming flag", pl["SYN-P2"]["upcoming"] is True and pl["SYN-P1"]["upcoming"] is False, "ok")
 
-    av = reader.rows("AzOutage_Availability(365, false, true) | where service_name == 'Azure SQL Database'")
+    av = reader.rows("AzMaintenance_Availability(365, false, true) | where service_name == 'Azure SQL Database'")
     expect("availability row for synthetic SQL (60 min of 5 resources)", bool(av) and av[0]["downtime_min"] >= 60 and av[0]["sla_status"] == "SLA not set", av[:1])
 
-    fc = reader.rows("AzOutage_Forecast(true) | where scope_level == 'service' and scope_key == 'Virtual Machines'")
+    fc = reader.rows("AzMaintenance_Forecast(true) | where scope_level == 'service' and scope_key == 'Virtual Machines'")
     expect("forecast row carries n, window, confidence", bool(fc) and all(fc[0].get(k) is not None for k in ("n_events", "window_days", "confidence")) and fc[0]["confidence"] in ("insufficient", "low", "medium", "high"), fc[:1])
 
 
@@ -123,7 +123,7 @@ def main() -> int:
             check(reader, f"workbook(expanded filters):{name}", wbkql.render(name, synthetic=a.synthetic, **expanded), results)
 
     for mode, slas, exp_pct, exp_h, tol in SLA_VECTORS:
-        q = f"AzOutage_CompositeSla(dynamic({slas}), '{mode}')"
+        q = f"AzMaintenance_CompositeSla(dynamic({slas}), '{mode}')"
         rows = check(reader, f"sla:{mode}{slas}", q, results)
         if rows:
             ok = abs(rows[0]["availability_pct"] - exp_pct) < 1e-6 and abs(rows[0]["allowance_h_per_year"] - exp_h) < tol

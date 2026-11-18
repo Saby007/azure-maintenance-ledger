@@ -1,6 +1,6 @@
 // purpose: KPI tiles for the PIR benchmark page (Azure-wide, not the customer's estate).
 // outputs: order, metric, value, subtitle, status
-let p = AzOutage_PirBaseline({IncludeSynthetic});
+let p = AzMaintenance_PirBaseline({IncludeSynthetic});
 let total = toscalar(p | count);
 let med = toscalar(p | where isnotnull(duration_h) | summarize round(percentile(duration_h, 50), 1));
 let p90 = toscalar(p | where isnotnull(duration_h) | summarize round(percentile(duration_h, 90), 1));

@@ -1,4 +1,4 @@
-"""Collector run functions. Each returns a RunResult and is wrapped by health.run_collector in function_app / backfill."""
+"""Collector run functions. Each returns a RunResult and is wrapped by health.run_collector in job / backfill."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def record_config(ing: Ingestor, subs: list[str]) -> None:
     from .health import health_row
 
     now = dt.datetime.now(dt.UTC)
-    ing.upload("AzOutageIngestHealth_CL", [health_row("config", now, now, RunResult(rows_read=len(subs)), "success")])
+    ing.upload("AzMaintenanceIngestHealth_CL", [health_row("config", now, now, RunResult(rows_read=len(subs)), "success")])
 
 
 def run_service_health(ing: Ingestor, client: arg.ArgClient, state: WatermarkStore, subs: list[str]) -> RunResult:

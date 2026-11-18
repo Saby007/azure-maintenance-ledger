@@ -1,4 +1,4 @@
-"""Daily planning-range job: reads the ledger through the AzOutage_* functions, computes ranges, writes AzOutageForecast_CL."""
+"""Daily planning-range job: reads the ledger through the AzMaintenance_* functions, computes ranges, writes AzMaintenanceForecast_CL."""
 
 from __future__ import annotations
 
@@ -90,6 +90,6 @@ def run_forecast(ing: Ingestor, reader: LogsReader, cfg_path: Path | None = None
         results += forecast.pir_baseline([(p["tracking_id"], p["category"] or "Other", float(p["duration_h"])) for p in pirs], span, cfg)
         res.rows_read += len(pirs)
 
-    res.rows_written = ing.upload("AzOutageForecast_CL", forecast.to_rows(results, now))
+    res.rows_written = ing.upload("AzMaintenanceForecast_CL", forecast.to_rows(results, now))
     res.watermark = now
     return res

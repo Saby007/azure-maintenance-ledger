@@ -1,5 +1,5 @@
 // purpose: public PIRs per year (Azure-wide broad-impact incidents, NOT this estate).
 // outputs: year, category, pirs
-AzOutage_PirBaseline({IncludeSynthetic})
+AzMaintenance_PirBaseline({IncludeSynthetic})
 | summarize pirs = count() by year = tostring(year), category
 | order by year asc

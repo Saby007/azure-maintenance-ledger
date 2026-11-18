@@ -1,4 +1,4 @@
-// AzOutage_Events
+// AzMaintenance_Events
 // purpose: one row per (subscription, TrackingId): the preferred source row (arg > rest > activitylog), deduplicated.
 //          Count events with dcount(tracking_id) (method item 3). Class: Unplanned = ServiceIssue, Planned = PlannedMaintenance, Advisory = the rest.
 // inputs: includeSynthetic:bool=false

@@ -111,7 +111,7 @@
       ]
     },
     {
-      "name": "AzOutageForecast_CL",
+      "name": "AzMaintenanceForecast_CL",
       "columns": [
         {"name": "computed_utc", "type": "datetime"},
         {"name": "scope_level", "type": "string"},
@@ -128,7 +128,7 @@
       ]
     },
     {
-      "name": "AzOutageIngestHealth_CL",
+      "name": "AzMaintenanceIngestHealth_CL",
       "columns": [
         {"name": "run_id", "type": "string"},
         {"name": "source", "type": "string"},
@@ -138,6 +138,7 @@
         {"name": "rows_written", "type": "long"},
         {"name": "watermark_utc", "type": "datetime"},
         {"name": "status", "type": "string"},
+        {"name": "state_value", "type": "string"},
         {"name": "errors", "type": "dynamic"}
       ]
     }

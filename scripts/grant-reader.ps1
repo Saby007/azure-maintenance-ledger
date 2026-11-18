@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS  Prints (default) or applies (-Apply, after confirmation) the Reader role assignments the collector identity needs.
 .DESCRIPTION
-  The function app's system-assigned identity needs Reader on every subscription in config/subscriptions.json
+  The collector job's system-assigned identity needs Reader on every subscription in config/subscriptions.json
   (Azure Resource Graph + Service Health REST). Nothing is granted without -Apply and an explicit 'yes'.
 #>
 [CmdletBinding()]

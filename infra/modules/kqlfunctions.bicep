@@ -11,7 +11,7 @@ resource fn 'Microsoft.OperationalInsights/workspaces/savedSearches@2020-08-01' 
   parent: ws
   name: toLower(f.name)
   properties: {
-    category: 'AzureOutageLedger'
+    category: 'AzureMaintenanceLedger'
     displayName: f.displayName
     query: f.query
     functionAlias: f.name

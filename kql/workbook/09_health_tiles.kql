@@ -1,6 +1,6 @@
 // purpose: KPI tiles for the Data health page.
 // outputs: order, metric, value, subtitle, status
-let h = AzOutage_DataHealth({IncludeSynthetic});
+let h = AzMaintenance_DataHealth({IncludeSynthetic});
 let ingest = h | where section == "ingest";
 let ok_n = toscalar(ingest | where status == "OK" | summarize count());
 let stale_n = toscalar(ingest | where status == "STALE" | summarize count());

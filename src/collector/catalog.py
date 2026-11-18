@@ -45,7 +45,7 @@ def read_catalog(path: Path) -> list[dict]:
 def build_rows(catalog: list[dict], now: dt.datetime | None = None) -> list[dict]:
     now = now or dt.datetime.now(dt.UTC)
     stamp_s = utc_iso(now) or ""
-    # one load = one ingested_utc, so AzOutage_Catalog() can select the latest complete load
+    # one load = one ingested_utc, so AzMaintenance_Catalog() can select the latest complete load
     return [stamp(c, row_key("catalog", "-", c["service_name"], stamp_s), now=now) for c in catalog]
 
 

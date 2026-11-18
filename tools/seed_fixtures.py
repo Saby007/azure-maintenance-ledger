@@ -126,7 +126,7 @@ def build(now: dt.datetime) -> dict[str, list[dict]]:
         health.append(stamp(row, row_key("synthetic-health", "-", src, utc_iso(now) or ""), now=now, synthetic=True))
 
     return {"AzResourceHealthEvents_CL": rh_rows, "AzSvcHealthEvents_CL": events, "AzInventoryCounts_CL": inv,
-            "AzVmAnnotations_CL": ann, "AzOutageForecast_CL": fc_rows, "AzOutageIngestHealth_CL": health}
+            "AzVmAnnotations_CL": ann, "AzMaintenanceForecast_CL": fc_rows, "AzMaintenanceIngestHealth_CL": health}
 
 
 def main() -> int:

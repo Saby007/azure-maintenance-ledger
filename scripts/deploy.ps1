@@ -1,6 +1,6 @@
 #Requires -Version 7
 <#
-.SYNOPSIS  Deploys the Azure Outage Ledger resource-group template to the sandbox subscription in .env.
+.SYNOPSIS  Deploys the Azure Maintenance Ledger resource-group template to the sandbox subscription in .env.
 .DESCRIPTION
   Confirms the active subscription equals AOL_SUBSCRIPTION_ID, ensures the resource group, then runs what-if.
   -WhatIf stops after what-if. Without it, deployment proceeds after what-if (use -NoConfirm to skip the prompt).
@@ -27,7 +27,7 @@ if ($LASTEXITCODE) { throw 'bicep build failed' }
 
 if (-not (az group exists --name $rg --subscription $cfg.AOL_SUBSCRIPTION_ID | ConvertFrom-Json)) {
   Write-Host "Creating resource group $rg in $loc"
-  az group create --name $rg --location $loc --subscription $cfg.AOL_SUBSCRIPTION_ID --tags app=azure-outage-ledger -o none
+  az group create --name $rg --location $loc --subscription $cfg.AOL_SUBSCRIPTION_ID --tags app=azure-maintenance-ledger -o none
 }
 
 $common = @('--resource-group', $rg, '--subscription', $cfg.AOL_SUBSCRIPTION_ID, '--template-file', $template,

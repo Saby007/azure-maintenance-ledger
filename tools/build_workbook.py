@@ -276,8 +276,8 @@ def build() -> dict:
         ("planner", "🔮 Expected downtime"), ("health", "❤️ Data health"), ("method", "ℹ️ About, method and caveats"),
     ]
     items: list[dict] = [
-        text("header", "# 🛰️ Azure Outage Ledger\n"
-                       "*Planned and unplanned outages of your Azure services, kept as a durable history.* "
+        text("header", "# 🛰️ Azure Maintenance Ledger\n"
+                       "*Planned and unplanned maintenance of your Azure services, kept as a durable history.* "
                        "**Exposure** (how long an event was open) and **downtime** (minutes a resource was Unavailable) are different measures and are never added together.\n\n"
                        "Orange = unplanned, blue = planned. Pick a time range and filters, then choose a tab."),
         global_params(),
@@ -507,7 +507,7 @@ def build() -> dict:
     # ------------------------------------------------------------ About
     items.append(group("page-method", "About, method and caveats", [
         text("mt-about", "### About this workbook\n"
-             "**Azure Outage Ledger** gives a customer one place to see the planned and unplanned outages of their Azure IaaS and PaaS services, "
+             "**Azure Maintenance Ledger** gives a customer one place to see the planned and unplanned maintenance of their Azure IaaS and PaaS services, "
              "and the downtime to expect, from a durable history. Azure itself only keeps Service Health and Resource Health data for a limited time "
              "(90 days to 1 year); the ledger keeps it for 730 days so trends can be reviewed after Azure has aged the data out.\n\n"
              "**Purpose**\n"

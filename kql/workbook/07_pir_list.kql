@@ -1,6 +1,6 @@
 // purpose: individual public PIRs with parsed window and parse status.
 // outputs: published_date, category, event_title, duration_h, parse_status, tracking_id
-AzOutage_PirBaseline({IncludeSynthetic})
+AzMaintenance_PirBaseline({IncludeSynthetic})
 | project published_date, category, event_title, duration_h, parse_status, tracking_id
 | order by published_date desc
 | take 200

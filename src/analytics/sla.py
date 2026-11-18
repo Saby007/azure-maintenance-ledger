@@ -1,4 +1,4 @@
-"""Composite SLA maths (docs/method.md item 8). The KQL twin is kql/AzOutage_CompositeSla.kql."""
+"""Composite SLA maths (docs/method.md item 8). The KQL twin is kql/AzMaintenance_CompositeSla.kql."""
 
 from __future__ import annotations
 

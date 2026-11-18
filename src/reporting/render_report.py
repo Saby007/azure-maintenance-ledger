@@ -1,8 +1,8 @@
-"""Quarterly report: self-contained HTML (inline CSS/SVG, no CDN) and XLSX (summary sheet + one sheet per AzOutage_* function).
+"""Quarterly report: self-contained HTML (inline CSS/SVG, no CDN) and XLSX (summary sheet + one sheet per AzMaintenance_* function).
 
   python -m reporting.render_report [--days 90] [--out reports] [--workspace <customerId>]
 
-Reads only through the AzOutage_* functions (azure-monitor-query). Methodology and caveats are on page 1.
+Reads only through the AzMaintenance_* functions (azure-monitor-query). Methodology and caveats are on page 1.
 """
 
 from __future__ import annotations
@@ -169,9 +169,9 @@ def render_html(data: dict[str, Any], days: int, now: dt.datetime | None = None)
     forecast = [r for r in data["sheets"]["Forecast"] if r.get("baseline") == "customer"]
     pir_forecast = [r for r in data["sheets"]["Forecast"] if r.get("baseline") == "public_pir"]
     fc_cols = ["scope_level", "scope_key", "n_events", "window_days", "confidence", "events_per_year", "p50_annual_h", "p90_annual_h", "duration_basis"]
-    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Azure Outage Ledger - report</title>
+    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Azure Maintenance Ledger - report</title>
 <style>{CSS}</style></head><body><main>
-<h1>Azure Outage Ledger</h1>
+<h1>Azure Maintenance Ledger</h1>
 <div class="meta">Window: last {days} days &middot; generated {now:%Y-%m-%d %H:%M} UTC &middot; every figure is derived from the ledger; nothing here is a guarantee.</div>
 <div class="box"><b>Methodology and caveats</b><ul>{caveats}</ul>
 <p>Data health: {"<b>attention needed</b> - " + html.escape("; ".join(f"{h['item']}: {h['status']}" for h in stale)) if stale else "all sources reporting"}.</p></div>
@@ -209,7 +209,7 @@ def write_xlsx(data: dict[str, Any], path: Path, days: int) -> None:
     wb = Workbook()
     ws = wb.active
     ws.title = "Summary"
-    ws.append(["Azure Outage Ledger", f"window: last {days} days", f"generated {dt.datetime.now(dt.UTC):%Y-%m-%d %H:%M} UTC"])
+    ws.append(["Azure Maintenance Ledger", f"window: last {days} days", f"generated {dt.datetime.now(dt.UTC):%Y-%m-%d %H:%M} UTC"])
     ws["A1"].font = Font(bold=True, size=14)
     ws.append([])
     for r in data["summary"]["tiles"]:
@@ -240,7 +240,7 @@ def generate(reader: Reader, days: int, out_dir: Path, now: dt.datetime | None =
     now = now or dt.datetime.now(dt.UTC)
     out_dir.mkdir(parents=True, exist_ok=True)
     data = collect(reader, days)
-    stem = stem or f"azure-outage-ledger-{now:%Y%m%d}"
+    stem = stem or f"azure-maintenance-ledger-{now:%Y%m%d}"
     html_path, xlsx_path = out_dir / f"{stem}.html", out_dir / f"{stem}.xlsx"
     html_path.write_text(render_html(data, days, now), encoding="utf-8")
     write_xlsx(data, xlsx_path, days)

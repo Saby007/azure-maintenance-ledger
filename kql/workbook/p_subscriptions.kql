@@ -1,4 +1,4 @@
 // purpose: parameter source - subscriptions with events in the ledger. outputs: value, label
-AzOutage_Events({IncludeSynthetic})
+AzMaintenance_Events({IncludeSynthetic})
 | summarize by subscription_id
 | project value = subscription_id, label = subscription_id

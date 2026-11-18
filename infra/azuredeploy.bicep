@@ -1,6 +1,7 @@
-// Azure Outage Ledger - ONE-CLICK deployment (subscription scope).
-// Creates the resource group, the workspace + tables + DCR + KQL functions + Workbook + alert + Function app, deploys the collector
-// code from a public package, grants the Function identity Reader on this subscription and exports the Activity Log
+// Azure Maintenance Ledger - ONE-CLICK deployment (subscription scope).
+// Creates the resource group, the workspace + tables + DCR + KQL functions + Workbook + alert + a scheduled Container Apps Job (the
+// collector; it uses no storage account, so it works where policy blocks public access on storage), grants the job identity Reader on
+// this subscription and exports the Activity Log
 // (ServiceHealth + ResourceHealth) to the new workspace. Compiled to infra/azuredeploy.json for the "Deploy to Azure" button.
 targetScope = 'subscription'
 
@@ -8,7 +9,7 @@ targetScope = 'subscription'
 param location string = deployment().location
 
 @description('Name of the resource group to create.')
-param resourceGroupName string = 'rg-azure-outage-ledger'
+param resourceGroupName string = 'rg-azure-maintenance-ledger'
 
 @description('Short prefix for resource names (3-8 lowercase letters or digits).')
 @minLength(3)
@@ -48,8 +49,8 @@ param enableVmAnnotations bool = true
 @description('Create a monthly cost budget alert (needs alertEmail).')
 param enableBudget bool = false
 
-@description('Public URL of the collector code package (zip).')
-param codePackageUri string = 'https://raw.githubusercontent.com/Saby007/azure-outage-ledger/main/release/app.zip'
+@description('Public URL of the collector code package (zip) that the scheduled job downloads at each run. Pin it to a commit or tag URL to control updates.')
+param packageUri string = 'https://raw.githubusercontent.com/Saby007/azure-maintenance-ledger/main/release/app.zip'
 
 @description('Export this subscription\'s Activity Log (ServiceHealth + ResourceHealth) to the new workspace.')
 param enableActivityLogExport bool = true
@@ -57,10 +58,10 @@ param enableActivityLogExport bool = true
 @description('Name of the diagnostic setting created on the subscription. WARNING: a setting with this name that already points elsewhere is overwritten, so change the name if one exists.')
 param activityLogExportName string = 'aol-export'
 
-@description('Grant the collector identity Reader on this subscription (needs Owner or User Access Administrator).')
+@description('Grant the collector job identity Reader on this subscription (needs Owner or User Access Administrator).')
 param grantReaderOnSubscription bool = true
 
-var tags = { app: 'azure-outage-ledger' }
+var tags = { app: 'azure-maintenance-ledger' }
 var subscriptionList = empty(additionalSubscriptionIds) ? subscription().subscriptionId : '${subscription().subscriptionId},${additionalSubscriptionIds}'
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
@@ -82,7 +83,7 @@ module core 'main.bicep' = {
     dailyCapGb: dailyCapGb
     alertEmail: alertEmail
     subscriptionIds: subscriptionList
-    codePackageUri: codePackageUri
+    packageUri: packageUri
     enablePirs: enablePirs
     enableVmAnnotations: enableVmAnnotations
     enableBudget: enableBudget
@@ -92,7 +93,7 @@ module core 'main.bicep' = {
 module reader 'modules/reader-sub.bicep' = if (grantReaderOnSubscription) {
   name: 'aol-reader'
   params: {
-    principalId: core.outputs.functionPrincipalId
+    principalId: core.outputs.collectorPrincipalId
   }
 }
 
@@ -106,5 +107,5 @@ module activityLogExport 'export.bicep' = if (enableActivityLogExport) {
 
 output resourceGroup string = resourceGroupName
 output workspaceResourceId string = core.outputs.workspaceResourceId
-output functionAppName string = core.outputs.functionAppName
-output nextSteps string = 'Open Azure Monitor > Workbooks > "Azure Outage Ledger". Data appears after the first run (about 10-20 minutes). See the Data health tab.'
+output collectorJobName string = core.outputs.collectorJobName
+output nextSteps string = 'Open Azure Monitor > Workbooks > "Azure Maintenance Ledger". The collector job runs hourly at :15 UTC and the first run loads the history, so data appears within about 90 minutes. See the Data health tab.'

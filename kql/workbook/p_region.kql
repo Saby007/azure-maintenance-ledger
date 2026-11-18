@@ -1,5 +1,5 @@
 // purpose: parameter source - regions seen in events. outputs: value, label
-AzOutage_EventServices({IncludeSynthetic})
+AzMaintenance_EventServices({IncludeSynthetic})
 | summarize by region
 | project value = region, label = region
 | order by label asc

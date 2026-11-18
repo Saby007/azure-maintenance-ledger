@@ -1,0 +1,7 @@
+// purpose: latest stored value for a state key (collector markers and watermarks live in the ingest-health table, source = "state:<key>").
+// inputs: {KEY} replaced by the collector
+// outputs: state_value
+AzMaintenanceIngestHealth_CL
+| where is_synthetic != true and source == "state:{KEY}"
+| summarize arg_max(finished_utc, state_value)
+| project state_value

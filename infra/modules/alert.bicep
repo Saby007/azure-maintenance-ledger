@@ -26,7 +26,7 @@ resource ag 'Microsoft.Insights/actionGroups@2023-01-01' = if (!empty(alertEmail
 var sourceList = join(map(enabledSources, s => '"${s}"'), ',')
 var query = '''
 let enabled = dynamic([{0}]);
-let ok = AzOutageIngestHealth_CL
+let ok = AzMaintenanceIngestHealth_CL
 | where ingested_utc > ago(36h) and status in ("success", "partial") and is_synthetic != true
 | summarize last_ok = max(finished_utc) by source;
 print source = enabled
@@ -40,7 +40,7 @@ resource rule 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
   location: location
   tags: tags
   properties: {
-    displayName: 'Azure Outage Ledger - no successful ingest in 36 h'
+    displayName: 'Azure Maintenance Ledger - no successful ingest in 36 h'
     description: 'A collector enabled for this ledger has not reported success for 36 hours.'
     severity: 2
     enabled: true

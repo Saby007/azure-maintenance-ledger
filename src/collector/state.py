@@ -1,9 +1,18 @@
-"""Watermarks in Azure Table Storage (identity auth only)."""
+"""Watermarks and 'already done' markers.
+
+The deployed collector runs as a Container Apps Job with no storage account (many tenants disable public access on storage by
+policy), so its state lives in the workspace: LogState reads the ingest-health table and writes marker rows to it.
+MemoryState is used by the local CLI and tests.
+"""
 
 from __future__ import annotations
 
-import os
-from typing import Protocol
+import datetime as dt
+from typing import Any, Protocol
+
+from .ingest import row_key, stamp, utc_iso
+
+HEALTH_TABLE = "AzMaintenanceIngestHealth_CL"
 
 
 class WatermarkStore(Protocol):
@@ -21,27 +30,52 @@ class MemoryState:
     def set(self, source: str, value: str) -> None:
         self._d[source] = value
 
+    def last_success(self, source: str) -> dt.datetime | None:
+        return None
 
-class TableState:
-    TABLE = "aolstate"
 
-    def __init__(self, account_url: str | None = None, credential=None):
-        from azure.data.tables import TableServiceClient
+def state_row(key: str, value: str, now: dt.datetime | None = None) -> dict:
+    now = now or dt.datetime.now(dt.UTC)
+    stamp_s = utc_iso(now) or ""
+    row = {
+        "run_id": f"state-{key}",
+        "source": f"state:{key}",
+        "started_utc": stamp_s,
+        "finished_utc": stamp_s,
+        "rows_read": 0,
+        "rows_written": 0,
+        "watermark_utc": stamp_s,
+        "status": "state",
+        "state_value": value,
+        "errors": [],
+    }
+    return stamp(row, row_key("state", "-", key, stamp_s), now=now)
 
-        if credential is None:
-            from azure.identity import DefaultAzureCredential
 
-            credential = DefaultAzureCredential()
-        svc = TableServiceClient(endpoint=account_url or os.environ["AOL_STATE_ACCOUNT_URL"], credential=credential)
-        self._t = svc.create_table_if_not_exists(self.TABLE)
+class LogState:
+    """State kept as rows of the ingest-health table. `reader` runs the KQL in kql/queries, `ingestor` writes marker rows."""
 
-    def get(self, source: str) -> str | None:
-        from azure.core.exceptions import ResourceNotFoundError
+    def __init__(self, reader: Any, ingestor: Any, load_query: Any):
+        self._reader = reader
+        self._ing = ingestor
+        self._load = load_query
 
-        try:
-            return self._t.get_entity("wm", source).get("value")
-        except ResourceNotFoundError:
+    def _query(self, name: str, key: str) -> list[dict]:
+        return self._reader.rows(self._load(name).replace("{KEY}", key.replace('"', "")))
+
+    def get(self, key: str) -> str | None:
+        rows = self._query("state_value", key)
+        value = rows[0].get("state_value") if rows else None
+        return str(value) if value else None
+
+    def set(self, key: str, value: str) -> None:
+        self._ing.upload(HEALTH_TABLE, [state_row(key, value)])
+
+    def last_success(self, source: str) -> dt.datetime | None:
+        rows = self._query("state_last_success", source)
+        value = rows[0].get("last_success") if rows else None
+        if value is None:
             return None
-
-    def set(self, source: str, value: str) -> None:
-        self._t.upsert_entity({"PartitionKey": "wm", "RowKey": source, "value": value})
+        if isinstance(value, dt.datetime):
+            return value if value.tzinfo else value.replace(tzinfo=dt.UTC)
+        return dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))

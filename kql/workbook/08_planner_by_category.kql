@@ -1,6 +1,6 @@
 // purpose: your estate's typical (P50) and bad (P90) year per category from the latest planning ranges.
 // outputs: scope_key, p50_annual_h, p90_annual_h, n_events, confidence
-AzOutage_Forecast({IncludeSynthetic})
+AzMaintenance_Forecast({IncludeSynthetic})
 | where baseline == "customer" and scope_level == "category"
 | project scope_key, p50_annual_h, p90_annual_h, n_events, confidence
 | order by p90_annual_h desc

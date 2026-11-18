@@ -1,6 +1,6 @@
 // purpose: planned maintenance notices per month (window start). Scheduled windows, not downtime.
 // outputs: month, notices
-AzOutage_Planned({IncludeSynthetic})
+AzMaintenance_Planned({IncludeSynthetic})
 | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
 | summarize arg_min(window_start_utc, *) by tracking_id
 | where window_start_utc between ({TimeRange:start} .. ({TimeRange:end} + 120d))

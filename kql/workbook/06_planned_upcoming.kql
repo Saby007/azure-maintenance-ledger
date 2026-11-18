@@ -1,6 +1,6 @@
 // purpose: upcoming planned maintenance (scheduled window, not downtime), soonest first.
 // outputs: days_until, event_title, services, regions, window_start_utc, window_end_utc, scheduled_h
-AzOutage_Planned({IncludeSynthetic})
+AzMaintenance_Planned({IncludeSynthetic})
 | where upcoming and ('*' in ({Subscriptions}) or subscription_id in ({Subscriptions}))
 | summarize arg_min(window_start_utc, *) by tracking_id
 | project days_until = round(todouble(datetime_diff("hour", window_start_utc, now())) / 24.0, 1), event_title,

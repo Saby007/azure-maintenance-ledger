@@ -22,7 +22,7 @@ from .pir_parser import PirWindow, category_of, load_overrides, normalize, parse
 log = logging.getLogger("aol.pirs")
 
 BASE_URL = "https://azure.status.microsoft/en-us/statushistoryapi/"
-USER_AGENT = "azure-outage-ledger/0.1 (customer-run ledger; low volume, >=1s between requests)"
+USER_AGENT = "azure-maintenance-ledger/0.1 (customer-run ledger; low volume, >=1s between requests)"
 SOURCE_URL = "https://azure.status.microsoft/en-us/status/history/"
 
 

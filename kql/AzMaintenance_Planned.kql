@@ -1,14 +1,14 @@
-// AzOutage_Planned
+// AzMaintenance_Planned
 // purpose: planned maintenance notices (Service Health PlannedMaintenance): scheduled window (NOT downtime), notice lead time,
 //          and realised downtime from Resource Health overlap (null = not measured). Method item 7.
 // inputs: includeSynthetic:bool=false
 // outputs: subscription_id, tracking_id, event_title, status, services, regions, window_start_utc, window_end_utc, scheduled_h, first_seen_utc,
 //          lead_time_days (window start minus first update seen in the ledger; a lower bound on the real notice; null when the ledger first saw the notice after the window started), upcoming,
 //          realised_downtime_min, affected_resources, source
-let realised = AzOutage_ResourceIntervals(includeSynthetic)
+let realised = AzMaintenance_ResourceIntervals(includeSynthetic)
     | where class == "Planned" and state =~ "Unavailable" and not(stale_open) and isnotempty(planned_tracking_id) and not(user_initiated)
     | summarize realised_downtime_min = sum(minutes), affected_resources = dcount(resource_id) by tracking_id = planned_tracking_id;
-AzOutage_Events(includeSynthetic)
+AzMaintenance_Events(includeSynthetic)
 | where class == "Planned"
 | join kind=leftouter realised on tracking_id
 | project subscription_id, tracking_id, event_title, status, services, regions,

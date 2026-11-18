@@ -1,6 +1,6 @@
 // purpose: composite SLA of the components typed into the planner (comma separated percentages), as three tiles.
 // outputs: order, metric, value, subtitle, status
-AzOutage_CompositeSla(todynamic('[{CompositeSlas}]'), '{CompositeMode}')
+AzMaintenance_CompositeSla(todynamic('[{CompositeSlas}]'), '{CompositeMode}')
 | mv-expand order = dynamic([1, 2, 3]) to typeof(int)
 | extend metric = case(order == 1, "Combined availability (%)", order == 2, "Allowed downtime (hours / year)", "Allowed downtime (minutes / year)"),
          value = case(order == 1, round(availability_pct, 5), order == 2, round(allowance_h_per_year, 3), round(allowance_min_per_year, 1)),

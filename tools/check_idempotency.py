@@ -2,7 +2,7 @@
 
   python tools/check_idempotency.py [--wait 240]
 
-Appends are real (raw rows grow) but AzOutage_* functions dedupe on row_key, so their row counts must not change.
+Appends are real (raw rows grow) but AzMaintenance_* functions dedupe on row_key, so their row counts must not change.
 Writes to the sandbox workspace from .env; read-only against Azure sources.
 """
 
@@ -22,12 +22,12 @@ from collector.backfill import load_env  # noqa: E402
 from collector.forecast_job import LogsReader  # noqa: E402
 
 DEDUP = {
-    "AzOutage_Events": "AzOutage_Events() | count",
-    "AzOutage_EventServices": "AzOutage_EventServices() | count",
-    "AzOutage_ResourceIntervals": "AzOutage_ResourceIntervals() | count",
-    "AzOutage_PirBaseline": "AzOutage_PirBaseline() | count",
-    "AzOutage_Catalog": "AzOutage_Catalog() | count",
-    "AzOutage_Planned": "AzOutage_Planned() | count",
+    "AzMaintenance_Events": "AzMaintenance_Events() | count",
+    "AzMaintenance_EventServices": "AzMaintenance_EventServices() | count",
+    "AzMaintenance_ResourceIntervals": "AzMaintenance_ResourceIntervals() | count",
+    "AzMaintenance_PirBaseline": "AzMaintenance_PirBaseline() | count",
+    "AzMaintenance_Catalog": "AzMaintenance_Catalog() | count",
+    "AzMaintenance_Planned": "AzMaintenance_Planned() | count",
     "inventory (latest snapshot rows)": "AzInventoryCounts_CL | where is_synthetic != true | summarize arg_max(ingested_utc, *) by row_key | count",
 }
 RAW = {

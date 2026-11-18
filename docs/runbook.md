@@ -9,7 +9,8 @@
 
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
-| Source STALE | timer failed or function cannot reach storage/ARG | Function app -> Monitor -> Invocations; check the identity still has Reader and the storage roles; re-run locally: `python -m collector.backfill --only arg,inventory` |
+| Source STALE | the hourly job failed or cannot reach ARG/GitHub/PyPI | Container Apps job `aol-collect` -> Execution history (status Failed); console logs are in the workspace table `ContainerAppConsoleLogs_CL` (also `ContainerAppSystemLogs_CL`) when the diagnostic setting is in place. Check the job identity still has Reader. Re-run: `az containerapp job start -n aol-collect -g <rg>`, or locally `python -m collector.backfill --only arg,inventory` |
+| First data takes long | bootstrap steps retry hourly (a role may still be propagating) | wait for the next :15 run; `AzMaintenanceIngestHealth_CL` rows with `source startswith "state:bootstrap"` show which steps finished |
 | No `AzureActivity` ServiceHealth/ResourceHealth rows | export missing, or no events yet | `az monitor diagnostic-settings subscription list`; rows only arrive when a new event occurs. Backfill the last 89 days: `--only activity` |
 | ARG returns 429 | > ~15 queries / 5 s | the client backs off automatically; re-run later |
 | PIR count dropped to 0 | endpoint changed (undocumented) | use a manual import: `python -m collector.backfill --only pirs --pir-file my_pirs.csv` (columns date `MM/DD/YYYY`, title, tracking_id, text) |
@@ -21,8 +22,8 @@
 ## Routine tasks
 
 - **Backfill / re-ingest**: safe to repeat; rows are idempotent (`row_key`) and the functions deduplicate. `python tools\check_idempotency.py` proves it.
-- **Change the taxonomy or SLA table**: edit `reference/service_catalog.csv`, then `python tools\load_reference.py` (a new load replaces the previous one in `AzOutage_Catalog()`).
-- **Recompute planning ranges**: `python -m collector.backfill --only forecast` (also runs daily in the Function app).
+- **Change the taxonomy or SLA table**: edit `reference/service_catalog.csv`, then `python tools\load_reference.py` (a new load replaces the previous one in `AzMaintenance_Catalog()`).
+- **Recompute planning ranges**: `python -m collector.backfill --only forecast` (the job also does it daily).
 - **Regenerate the Workbook** after editing `kql/workbook/*.kql` or `tools/build_workbook.py`: `python tools\build_workbook.py` then `scripts\deploy.ps1`.
 - **Quarterly report**: `python -m reporting.render_report --days 90`.
 - **Cost check**: `scripts\cost-report.ps1` (billable GB from `Usage`, monthly estimate); flag anything above US$10/month.

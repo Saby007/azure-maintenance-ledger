@@ -1,7 +1,7 @@
 [project]
-name = "azure-outage-ledger"
+name = "azure-maintenance-ledger"
 version = "0.1.0"
-description = "Durable ledger and planning ranges for Azure planned/unplanned outages"
+description = "Durable ledger and planning ranges for Azure planned/unplanned maintenance"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]

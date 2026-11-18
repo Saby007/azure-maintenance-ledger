@@ -1,7 +1,7 @@
 // Shared prelude for the planner page ("//#include _planner_base"): picks the most specific planning range with data
 // (service+region -> service -> category) and, when that is thin, the Azure-wide PIR baseline. Evidence, not a forecast.
-let fc = AzOutage_Forecast({IncludeSynthetic});
-let cat = AzOutage_Catalog({IncludeSynthetic}) | summarize category = take_any(category) by service_name;
+let fc = AzMaintenance_Forecast({IncludeSynthetic});
+let cat = AzMaintenance_Catalog({IncludeSynthetic}) | summarize category = take_any(category) by service_name;
 let svc = '{PlannerService}';
 let reg = '{PlannerRegion}';
 let svc_cat = toscalar(cat | where service_name == svc | project category);

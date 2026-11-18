@@ -1,4 +1,4 @@
-"""Per-run health rows (AzOutageIngestHealth_CL) written by every collector run."""
+"""Per-run health rows (AzMaintenanceIngestHealth_CL) written by every collector run."""
 
 from __future__ import annotations
 
@@ -34,6 +34,7 @@ def health_row(source: str, started: dt.datetime, finished: dt.datetime, result:
         "rows_written": result.rows_written,
         "watermark_utc": utc_iso(result.watermark),
         "status": status,
+        "state_value": "",
         "errors": result.errors[:10],
     }
     return stamp(row, row_key("health", "-", run_id, utc_iso(finished) or ""))
@@ -48,8 +49,8 @@ def run_collector(source: str, fn: Callable[[], RunResult], ingestor: Any) -> Ru
     except Exception as exc:  # recorded then re-raised
         log.error("collector %s failed: %s", source, type(exc).__name__)
         result = RunResult(errors=[f"{type(exc).__name__}: {str(exc)[:300]}"])
-        ingestor.upload("AzOutageIngestHealth_CL", [health_row(source, started, dt.datetime.now(dt.UTC), result, "failed")])
+        ingestor.upload("AzMaintenanceIngestHealth_CL", [health_row(source, started, dt.datetime.now(dt.UTC), result, "failed")])
         log.debug(traceback.format_exc())
         raise
-    ingestor.upload("AzOutageIngestHealth_CL", [health_row(source, started, dt.datetime.now(dt.UTC), result, status)])
+    ingestor.upload("AzMaintenanceIngestHealth_CL", [health_row(source, started, dt.datetime.now(dt.UTC), result, status)])
     return result

@@ -1,4 +1,4 @@
-// AzOutage_Availability
+// AzMaintenance_Availability
 // purpose: observed availability per service over the trailing window, vs SLA where one is set (method items 4-5).
 //          availability = 1 - merged Unavailable minutes / (resources x window minutes); resources from the latest inventory snapshot.
 //          User-initiated downtime is excluded unless includeUserInitiated. Degraded is not counted as downtime.
@@ -8,7 +8,7 @@
 let win_end = now();
 let win_start = ago(1d * windowDays);
 let win_min = todouble(windowDays) * 1440.0;
-let cat = AzOutage_Catalog(includeSynthetic) | project service_name, arm_type, category, sla_percent;
+let cat = AzMaintenance_Catalog(includeSynthetic) | project service_name, arm_type, category, sla_percent;
 let inv_all = AzInventoryCounts_CL
     | where includeSynthetic or is_synthetic != true
     | summarize arg_max(ingested_utc, *) by row_key
@@ -21,7 +21,7 @@ let inv_shape = inv_all
     | summarize total = sum(resource_count) by rt, snapshot_date
     | summarize first_snapshot = min(snapshot_date), lo = min(total), hi = max(total) by rt
     | extend approximate = lo != hi or first_snapshot > win_start + 1d;
-let downtime = AzOutage_ResourceIntervals(includeSynthetic)
+let downtime = AzMaintenance_ResourceIntervals(includeSynthetic)
     | where state =~ "Unavailable" and not(stale_open) and (includeUserInitiated or not(user_initiated))
     | extend s = max_of(start_utc, win_start), e = min_of(end_utc, win_end)
     | where e > s

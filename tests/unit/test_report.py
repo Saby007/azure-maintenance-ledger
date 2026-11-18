@@ -25,12 +25,12 @@ class FakeReader:
             return [{"month": dt.datetime(2026, 9, 1), "class": "Unplanned", "events": 2}, {"month": dt.datetime(2026, 10, 1), "class": "Planned", "events": 1}]
         if "startofmonth(start_utc)" in query:
             return [{"month": dt.datetime(2026, 10, 1), "class": "Unplanned", "downtime_min": 45.0}]
-        if "AzOutage_Forecast" in query:
+        if "AzMaintenance_Forecast" in query:
             return [{"baseline": "customer", "scope_level": "service", "scope_key": "Virtual Machines", "n_events": 2, "window_days": 200,
                      "confidence": "insufficient", "events_per_year": 3.65, "p50_annual_h": 1.0, "p90_annual_h": 2.0, "duration_basis": "resource_health"},
                     {"baseline": "public_pir", "scope_level": "category", "scope_key": "Network", "n_events": 12, "window_days": 1800,
                      "confidence": "high", "events_per_year": 2.4, "p50_annual_h": 20.0, "p90_annual_h": 40.0, "duration_basis": "resource_health"}]
-        if "AzOutage_DataHealth" in query:
+        if "AzMaintenance_DataHealth" in query:
             return [{"section": "ingest", "item": "inventory", "status": "STALE", "value": 1, "detail": "x"}]
         return [{"a": 1, "b": "<script>alert(1)</script>", "d": dt.datetime(2026, 10, 1, tzinfo=dt.UTC), "dyn": ["x"]}]
 

@@ -1,4 +1,4 @@
-// AzOutage_Catalog
+// AzMaintenance_Catalog
 // purpose: newest-load editable service catalog (reference/service_catalog.csv loaded by tools/load_reference.py). One row per (service, ARM type).
 // inputs: includeSynthetic:bool=false
 // outputs: service_name, arm_type (lower-case), category, sla_percent (null = SLA not set), sla_source_url, sla_verified_on, notes

@@ -1,4 +1,4 @@
-# Azure Outage Ledger - standing rules and validated facts
+# Azure Maintenance Ledger - standing rules and validated facts
 
 ## A1. Definitions
 - Unplanned = Service Health ServiceIssue events (Activity Log incidentType Incident), plus Resource Health downtime not explained by a planned event. Planned = Service Health PlannedMaintenance (incidentType Maintenance), or a VM annotation with category Planned.
@@ -34,14 +34,14 @@ Platform
 - Subscription-scope Bicep: Microsoft.Insights/diagnosticSettings@2021-05-01-preview with logs [{category:'ServiceHealth',enabled:true},{category:'ResourceHealth',enabled:true}] only.
 - Logs Ingestion API: a DCR with kind 'Direct' exposes its own logsIngestion endpoint (no DCE unless Private Link). The identity needs Monitoring Metrics Publisher on the DCR.
 - Workbook: Microsoft.Insights/workbooks@2023-06-01, kind 'shared', required category, displayName and serializedData (JSON string); sourceId = workspace resource ID; name = deterministic GUID. Viewers need Reader on the workbook and on the resources it queries.
-- Functions: use Flex Consumption (Linux Consumption retires 30 Sep 2028). Timer triggers on Linux Flex ignore WEBSITE_TIME_ZONE/TZ: use UTC cron.
+- Collector hosting (supersedes the Flex Consumption rule, see docs/decisions.md D-17/D-21): Azure Container Apps Job on the consumption profile, no storage account (a tenant policy can force public network access off on storage, which breaks Azure Functions). Schedules are UTC cron. If Functions are ever used again: Flex Consumption (Linux Consumption retires 30 Sep 2028); timer triggers on Linux Flex ignore WEBSITE_TIME_ZONE/TZ.
 - SLA maths test vectors: 99.9% = 8.76 h/yr; 99.95% = 4.38 h/yr; 99.99% = 52.56 min/yr; serial 99.95% x 99.99% = 99.940005% = 5.26 h/yr; two 99.9% in parallel = 99.9999% = 31.5 s/yr.
 
 ## A3. Verify first (not yet tested) - record evidence in docs/decisions.md
 1. AzureActivity column names for ResourceHealth/ServiceHealth rows (run getschema and a sample; Properties vs Properties_d, EventDataId, CorrelationId).
 2. impactedresources property names (the docs list a misspelt "staus").
 3. Whether the `scan` operator works in Azure Monitor Logs; otherwise sessionise with serialize + prev()/next().
-4. Flex Consumption: supported Python versions, free grant, identity-based storage access and the roles it needs, instance-size and max-instance settings.
+4. Flex Consumption (no longer used by the collector, see D-17/D-21): supported Python versions, free grant, identity-based storage access and the roles it needs, instance-size and max-instance settings.
 5. Custom tables (Microsoft.OperationalInsights/workspaces/tables) and Direct-DCR stream declarations in Bicep.
 6. Existing diagnostic settings (and the per-subscription limit) on each target subscription before adding one.
 7. Acceptable use of the public status-history endpoint with the customer. Keep the PIR module optional behind an interface so it can be replaced by a manual CSV import.
@@ -49,11 +49,11 @@ Platform
 
 ## A4. Engineering rules
 - Python: typed, ruff clean, pytest for all logic; retries with exponential backoff and jitter; structured logs with no PII; UTC ISO-8601 everywhere (convert ticks inside the ARG query).
-- Ingestion is idempotent and append-only: row_key = sha256(source|subscription_id|key|last_update); watermarks in Table Storage; KQL functions dedupe with `arg_max(ingested_utc, *) by row_key`.
+- Ingestion is idempotent and append-only: row_key = sha256(source|subscription_id|key|last_update); watermarks and step markers in the ingest-health table (state:<key> rows), not Table Storage; KQL functions dedupe with `arg_max(ingested_utc, *) by row_key`.
 - All KQL lives in kql/*.kql with a header (purpose, inputs, outputs) and is deployed as workspace functions (savedSearches with functionAlias). No inline KQL in Python except text loaded from those files.
 - Synthetic test rows carry is_synthetic=true and every production function filters them out.
 - Security: managed identity only; no keys, SAS tokens or connection strings; storage shared-key access disabled where supported; least privilege (Reader on the target scope, Monitoring Metrics Publisher on the DCR, Log Analytics Reader for reporting).
-- Cost: dedicated or existing workspace (parameter); Analytics-plan tables; retention parameter; workspace daily cap; budget alert; Flex Consumption on-demand only (no always-ready), smallest instance size; no Application Insights.
+- Cost: dedicated or existing workspace (parameter); Analytics-plan tables; retention parameter; workspace daily cap; budget alert; Container Apps Job on the consumption profile (no always-on compute, no storage account), smallest size; no Application Insights.
 - No customer data in the repo. Fixtures are public PIRs or synthetic. .gitignore covers .env, local.settings.json and exports.
 - Be polite to the status site: >= 1 s between requests, identify the tool in User-Agent, cache raw HTML, monthly after the backfill.
 

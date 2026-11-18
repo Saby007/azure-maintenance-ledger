@@ -1,4 +1,4 @@
-// AzOutage_ResourceIntervals
+// AzMaintenance_ResourceIntervals
 // purpose: Resource Health Unavailable/Degraded intervals per resource, classified Planned/Unplanned (method items 1-2).
 //          Interval opens when the state becomes Unavailable (or Degraded) and closes at the next state change; Unknown rows and duplicate
 //          Active/Updated rows are ignored; open intervals end at now() and are flagged. Per resource the state sequence is linear, so
@@ -24,12 +24,12 @@ let rh_activity = union isfuzzy=true
                   cause = tostring(p.cause),
                   event_utc = TimeGenerated),
     (rh_ledger | take 0);
-let cat = AzOutage_Catalog(includeSynthetic) | project service_name, arm_type, category;
+let cat = AzMaintenance_Catalog(includeSynthetic) | project service_name, arm_type, category;
 let ann = AzVmAnnotations_CL
     | where includeSynthetic or is_synthetic != true
     | summarize arg_max(ingested_utc, *) by row_key
     | project resource_id = tolower(resource_id), ann_time = occurred_utc, ann_category = category, ann_context = context;
-let planned = AzOutage_Events(includeSynthetic)
+let planned = AzMaintenance_Events(includeSynthetic)
     | where class == "Planned"
     | mv-expand service_name = services to typeof(string)
     | where isnotempty(service_name)
