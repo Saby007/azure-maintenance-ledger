@@ -32,6 +32,4 @@ jobs:
       - name: one-click template (infra/azuredeploy.json) is up to date
         run: |
           az bicep build --file infra/azuredeploy.bicep --outfile /tmp/azuredeploy.json
-          diff <(python -c "import json;print(json.dumps(json.load(open('/tmp/azuredeploy.json')),indent=1,sort_keys=True))") \
-               <(python -c "import json;print(json.dumps(json.load(open('infra/azuredeploy.json')),indent=1,sort_keys=True))") \
-            || (echo "infra/azuredeploy.json is out of date: rebuild it from infra/azuredeploy.bicep" && exit 1)
+          python tools/check_template.py /tmp/azuredeploy.json infra/azuredeploy.json
