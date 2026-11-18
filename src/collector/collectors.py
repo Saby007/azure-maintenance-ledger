@@ -16,6 +16,8 @@ from .state import WatermarkStore
 
 log = logging.getLogger("aol.collectors")
 
+MIN_PLAUSIBLE_PIRS = 30  # the public history holds ~80; far fewer means a truncated fetch
+
 
 def _root() -> Path:
     here = Path(__file__).resolve()
@@ -104,6 +106,8 @@ def run_pirs(ing: Ingestor, source: pirs.PirSource, overrides: Path | None = Non
     unparsed = [r["tracking_id"] for r in rows if r["parse_status"] == "unparsed"]
     if unparsed:
         res.errors.append(f"{len(unparsed)} PIR(s) without a parsable window: {', '.join(unparsed[:8])}")
+    if len(items) < MIN_PLAUSIBLE_PIRS and isinstance(source, pirs.FetchPirSource):
+        res.errors.append(f"only {len(items)} PIR(s) fetched (expected at least {MIN_PLAUSIBLE_PIRS}): the status site may have returned a truncated list")
     res.rows_written = ing.upload("AzPublicPirs_CL", rows)
     return res
 

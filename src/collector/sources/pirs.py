@@ -76,14 +76,26 @@ class FetchPirSource:
 
         session = requests.Session()
         session.headers.update({"X-Requested-With": "XMLHttpRequest", "User-Agent": USER_AGENT})
+        page_size = 10
+        previous = page_size
         for page in range(1, self.max_pages + 1):
-            html = self._page_html(session, page)
-            if not html:
-                return
-            found = parse_history_html(html, BeautifulSoup)
+            found: list[dict] = []
+            # An empty or failed page right after a full page is usually a transient answer from the site, not the end of the list.
+            for attempt in range(1, 4 if previous >= page_size else 2):
+                html = self._page_html(session, page)
+                found = parse_history_html(html, BeautifulSoup) if html else []
+                if found:
+                    break
+                if attempt < 3 and previous >= page_size:
+                    time.sleep(5 * attempt)
+                    if self.cache_dir:  # never cache an empty answer
+                        (self.cache_dir / f"pirs_page_{page:03d}.html").unlink(missing_ok=True)
             if not found:
                 return
+            previous = len(found)
             yield from found
+            if previous < page_size:  # a short page is the last one
+                return
 
 
 def parse_history_html(html: str, bs4_cls=None) -> list[dict]:
