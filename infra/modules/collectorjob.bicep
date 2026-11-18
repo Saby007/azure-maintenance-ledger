@@ -68,7 +68,7 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
           image: image
           resources: { cpu: json('0.5'), memory: '1Gi' }
           command: ['/bin/sh', '-c']
-          args: [script]
+          args: [replace(script, '\r', '')] // strip CR so the script also works when this file is saved with Windows line endings
           env: [for k in objectKeys(union({ AOL_PACKAGE_URL: packageUri }, appSettings)): {
             name: k
             value: union({ AOL_PACKAGE_URL: packageUri }, appSettings)[k]

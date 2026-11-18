@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "8619144033891011976"
+      "templateHash": "16781849234711919640"
     }
   },
   "parameters": {
@@ -207,7 +207,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "8221268884088626210"
+              "templateHash": "13039699061230451630"
             }
           },
           "parameters": {
@@ -1595,7 +1595,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.43.8.12551",
-                      "templateHash": "14247560224133409279"
+                      "templateHash": "4630908694138745660"
                     }
                   },
                   "parameters": {
@@ -1635,7 +1635,7 @@
                     }
                   },
                   "variables": {
-                    "script": "set -e\r\ncd /tmp\r\npython3 -m pip install -q --no-cache-dir --disable-pip-version-check requests\r\npython3 -c \"import os,requests,zipfile;r=requests.get(os.environ['AOL_PACKAGE_URL'],timeout=120);r.raise_for_status();open('app.zip','wb').write(r.content);zipfile.ZipFile('app.zip').extractall('app')\"\r\ncd app\r\npython3 -m pip install -q --no-cache-dir --disable-pip-version-check -r requirements.txt\r\nPYTHONPATH=. python3 -m collector.job collect\r\n"
+                    "script": "set -e\ncd /tmp\npython3 -m pip install -q --no-cache-dir --disable-pip-version-check requests\npython3 -c \"import os,requests,zipfile;r=requests.get(os.environ['AOL_PACKAGE_URL'],timeout=120);r.raise_for_status();open('app.zip','wb').write(r.content);zipfile.ZipFile('app.zip').extractall('app')\"\ncd app\npython3 -m pip install -q --no-cache-dir --disable-pip-version-check -r requirements.txt\nPYTHONPATH=. python3 -m collector.job collect\n"
                   },
                   "resources": [
                     {
@@ -1718,7 +1718,7 @@
                                 "-c"
                               ],
                               "args": [
-                                "[variables('script')]"
+                                "[replace(variables('script'), '\r', '')]"
                               ]
                             }
                           ]
@@ -2060,7 +2060,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.43.8.12551",
-                      "templateHash": "1883622853948362616"
+                      "templateHash": "9378326063948507432"
                     }
                   },
                   "parameters": {
@@ -2087,7 +2087,7 @@
                   },
                   "variables": {
                     "sourceList": "[join(map(parameters('enabledSources'), lambda('s', format('\"{0}\"', lambdaVariables('s')))), ',')]",
-                    "query": "let enabled = dynamic([{0}]);\r\nlet ok = AzMaintenanceIngestHealth_CL\r\n| where ingested_utc > ago(36h) and status in (\"success\", \"partial\") and is_synthetic != true\r\n| summarize last_ok = max(finished_utc) by source;\r\nprint source = enabled\r\n| mv-expand source to typeof(string)\r\n| join kind=leftouter ok on source\r\n| where isnull(last_ok)\r\n"
+                    "query": "let enabled = dynamic([{0}]);\nlet ok = AzMaintenanceIngestHealth_CL\n| where ingested_utc > ago(36h) and status in (\"success\", \"partial\") and is_synthetic != true\n| summarize last_ok = max(finished_utc) by source;\nprint source = enabled\n| mv-expand source to typeof(string)\n| join kind=leftouter ok on source\n| where isnull(last_ok)\n"
                   },
                   "resources": [
                     {
