@@ -1,5 +1,8 @@
-// purpose: parameter source - regions seen in events. outputs: value, label
-AzMaintenance_EventServices({IncludeSynthetic})
-| summarize by region
-| project value = region, label = region
+// purpose: parameter source - regions seen in events; shows "(no data yet)" until the collector has loaded data. outputs: value, label
+let rows = AzMaintenance_EventServices({IncludeSynthetic})
+    | summarize by region
+    | project value = region, label = region;
+let n = toscalar(rows | count);
+rows
+| union (print value = "(no data yet)", label = "(no data yet)" | where n == 0)
 | order by label asc

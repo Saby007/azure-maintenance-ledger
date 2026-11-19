@@ -29,6 +29,10 @@ NS = uuid.UUID("5d0f4ad0-3a56-4d56-9d3a-aa0c0a0d0e01")
 # Grid / tile formatter ids used by the Workbooks renderer
 F_NUMBER, F_TEXT, F_HEATMAP, F_BAR, F_DATE, F_BIGNUM, F_THRESHOLDS = 2, 1, 3, 4, 6, 12, 18
 
+# The ledger is ingestion-time based, so panels and filter lists must read the whole retained history,
+# not the portal default of the last day.
+LEDGER_WINDOW_MS = 3 * 365 * 86400000
+
 COLOR_UNPLANNED, COLOR_PLANNED = "orange", "blue"
 CLASS_COLORS = {"Unplanned": COLOR_UNPLANNED, "Planned": COLOR_PLANNED}
 
@@ -51,7 +55,7 @@ def p_dropdown_query(name: str, label: str, qfile: str, *, multi: bool = True, d
         "resourceType": LA,
         "crossComponentResources": [WS],
         "typeSettings": {"additionalResourceOptions": ["value::all"] if multi else [], "showDefault": False},
-        "timeContext": {"durationMs": 86400000},
+        "timeContext": {"durationMs": LEDGER_WINDOW_MS},
     }
     if multi:
         p.update({"multiSelect": True, "quote": "'", "delimiter": ",", "selectAllValue": "*", "value": ["value::all"]})
@@ -71,7 +75,7 @@ def p_static(name: str, label: str, options: list[tuple[str, str]], default: str
         "typeSettings": {"additionalResourceOptions": [], "showDefault": False},
         "jsonData": json.dumps([{"value": v, "label": lbl, "selected": v == default} for v, lbl in options]),
         "value": default,
-        "timeContext": {"durationMs": 86400000},
+        "timeContext": {"durationMs": LEDGER_WINDOW_MS},
     }
     if hidden:
         p["isHiddenWhenLocked"] = True
@@ -82,7 +86,7 @@ def p_static(name: str, label: str, options: list[tuple[str, str]], default: str
 
 def p_text(name: str, label: str, default: str, *, hidden: bool = False, local: bool = False) -> dict:
     p = {"id": uid("param", name), "version": "KqlParameterItem/1.0", "name": name, "label": label, "type": 1,
-         "isRequired": True, "value": default, "timeContext": {"durationMs": 86400000}}
+         "isRequired": True, "value": default, "timeContext": {"durationMs": LEDGER_WINDOW_MS}}
     if hidden:
         p["isHiddenWhenLocked"] = True
     if not local:
@@ -163,7 +167,7 @@ def query(name: str, title: str, qfile: str, viz: str = "table", empty: str = "N
         "title": title,
         "noDataMessage": empty,
         "noDataMessageStyle": 4,
-        "timeContext": {"durationMs": 86400000},
+        "timeContext": {"durationMs": LEDGER_WINDOW_MS},
         "queryType": 0,
         "resourceType": LA,
         "crossComponentResources": [WS],

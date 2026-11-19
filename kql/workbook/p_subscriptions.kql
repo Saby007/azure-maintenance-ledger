@@ -1,4 +1,7 @@
-// purpose: parameter source - subscriptions with events in the ledger. outputs: value, label
-AzMaintenance_Events({IncludeSynthetic})
-| summarize by subscription_id
-| project value = subscription_id, label = subscription_id
+// purpose: parameter source - subscriptions with events in the ledger; shows "(no data yet)" until the collector has loaded data. outputs: value, label
+let rows = AzMaintenance_Events({IncludeSynthetic})
+    | summarize by subscription_id
+    | project value = subscription_id, label = subscription_id;
+let n = toscalar(rows | count);
+rows
+| union (print value = "(no data yet)", label = "(no data yet)" | where n == 0)

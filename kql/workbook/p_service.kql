@@ -1,7 +1,10 @@
-// purpose: parameter source - services seen in events or in the catalog. outputs: value, label
-union
+// purpose: parameter source - services seen in events or in the catalog; shows "(no data yet)" when both are empty. outputs: value, label
+let rows = union
     (AzMaintenance_EventServices({IncludeSynthetic}) | summarize by service),
     (AzMaintenance_Catalog({IncludeSynthetic}) | summarize by service = service_name)
-| summarize by service
-| project value = service, label = service
+    | summarize by service
+    | project value = service, label = service;
+let n = toscalar(rows | count);
+rows
+| union (print value = "(no data yet)", label = "(no data yet)" | where n == 0)
 | order by label asc

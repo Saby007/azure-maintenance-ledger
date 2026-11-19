@@ -30,7 +30,7 @@
       "jsonData": "[{\"value\": \"false\", \"label\": \"No\", \"selected\": true}, {\"value\": \"true\", \"label\": \"Yes (diagnostics only)\", \"selected\": false}]",
       "value": "false",
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "isHiddenWhenLocked": true,
       "isGlobal": true
@@ -44,7 +44,7 @@
       "isRequired": true,
       "value": "overview",
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "isHiddenWhenLocked": true,
       "isGlobal": true
@@ -88,7 +88,7 @@
       "label": "Subscriptions",
       "type": 2,
       "isRequired": true,
-      "query": "AzMaintenance_Events({IncludeSynthetic})\n| summarize by subscription_id\n| project value = subscription_id, label = subscription_id\n",
+      "query": "let rows = AzMaintenance_Events({IncludeSynthetic})\n    | summarize by subscription_id\n    | project value = subscription_id, label = subscription_id;\nlet n = toscalar(rows | count);\nrows\n| union (print value = \"(no data yet)\", label = \"(no data yet)\" | where n == 0)\n",
       "queryType": 0,
       "resourceType": "microsoft.operationalinsights/workspaces",
       "crossComponentResources": [
@@ -101,7 +101,7 @@
        "showDefault": false
       },
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "multiSelect": true,
       "quote": "'",
@@ -132,7 +132,7 @@
        "showDefault": false
       },
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "multiSelect": true,
       "quote": "'",
@@ -150,7 +150,7 @@
       "label": "Service",
       "type": 2,
       "isRequired": true,
-      "query": "union\n    (AzMaintenance_EventServices({IncludeSynthetic}) | summarize by service),\n    (AzMaintenance_Catalog({IncludeSynthetic}) | summarize by service = service_name)\n| summarize by service\n| project value = service, label = service\n| order by label asc\n",
+      "query": "let rows = union\n    (AzMaintenance_EventServices({IncludeSynthetic}) | summarize by service),\n    (AzMaintenance_Catalog({IncludeSynthetic}) | summarize by service = service_name)\n    | summarize by service\n    | project value = service, label = service;\nlet n = toscalar(rows | count);\nrows\n| union (print value = \"(no data yet)\", label = \"(no data yet)\" | where n == 0)\n| order by label asc\n",
       "queryType": 0,
       "resourceType": "microsoft.operationalinsights/workspaces",
       "crossComponentResources": [
@@ -163,7 +163,7 @@
        "showDefault": false
       },
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "multiSelect": true,
       "quote": "'",
@@ -181,7 +181,7 @@
       "label": "Region",
       "type": 2,
       "isRequired": true,
-      "query": "AzMaintenance_EventServices({IncludeSynthetic})\n| summarize by region\n| project value = region, label = region\n| order by label asc\n",
+      "query": "let rows = AzMaintenance_EventServices({IncludeSynthetic})\n    | summarize by region\n    | project value = region, label = region;\nlet n = toscalar(rows | count);\nrows\n| union (print value = \"(no data yet)\", label = \"(no data yet)\" | where n == 0)\n| order by label asc\n",
       "queryType": 0,
       "resourceType": "microsoft.operationalinsights/workspaces",
       "crossComponentResources": [
@@ -194,7 +194,7 @@
        "showDefault": false
       },
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "multiSelect": true,
       "quote": "'",
@@ -219,7 +219,7 @@
       "jsonData": "[{\"value\": \"false\", \"label\": \"No (default)\", \"selected\": true}, {\"value\": \"true\", \"label\": \"Yes\", \"selected\": false}]",
       "value": "false",
       "timeContext": {
-       "durationMs": 86400000
+       "durationMs": 94608000000
       },
       "isGlobal": true
      }
@@ -345,7 +345,7 @@
        "noDataMessage": "No status information yet. See the Data health tab.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -427,7 +427,7 @@
        "noDataMessage": "No events in the ledger yet. See the Data health tab.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -507,7 +507,7 @@
        "noDataMessage": "No events for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -543,7 +543,7 @@
        "noDataMessage": "No events for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -586,7 +586,7 @@
        "noDataMessage": "No events for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -653,7 +653,7 @@
        "noDataMessage": "No events in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -695,7 +695,7 @@
        "noDataMessage": "🎉 No Resource Health downtime recorded in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -737,7 +737,7 @@
        "noDataMessage": "No events in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -893,7 +893,7 @@
        "noDataMessage": "🎉 No downtime recorded for these services in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -928,7 +928,7 @@
        "noDataMessage": "No service data for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1176,7 +1176,7 @@
        "noDataMessage": "No regional data for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1212,7 +1212,7 @@
        "noDataMessage": "No regional data for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1254,7 +1254,7 @@
        "noDataMessage": "No regional data for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1404,7 +1404,7 @@
        "noDataMessage": "🎉 No Resource Health downtime recorded in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1439,7 +1439,7 @@
        "noDataMessage": "No downtime periods in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1646,7 +1646,7 @@
        "noDataMessage": "No planned maintenance in the ledger yet.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1726,7 +1726,7 @@
        "noDataMessage": "No planned maintenance in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1761,7 +1761,7 @@
        "noDataMessage": "✅ No upcoming planned maintenance.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1873,7 +1873,7 @@
        "noDataMessage": "No planned maintenance in the selected range.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -1995,7 +1995,7 @@
        "noDataMessage": "No VM annotations. The VM annotation module is optional and needs VMs in scope.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2086,7 +2086,7 @@
        "noDataMessage": "No public PIRs loaded.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2166,7 +2166,7 @@
        "noDataMessage": "No public PIRs loaded.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2197,7 +2197,7 @@
        "noDataMessage": "No public PIRs loaded.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2239,7 +2239,7 @@
        "noDataMessage": "No public PIRs loaded.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2373,7 +2373,7 @@
          "label": "Service",
          "type": 2,
          "isRequired": true,
-         "query": "union\n    (AzMaintenance_EventServices({IncludeSynthetic}) | summarize by service),\n    (AzMaintenance_Catalog({IncludeSynthetic}) | summarize by service = service_name)\n| summarize by service\n| project value = service, label = service\n| order by label asc\n",
+         "query": "let rows = union\n    (AzMaintenance_EventServices({IncludeSynthetic}) | summarize by service),\n    (AzMaintenance_Catalog({IncludeSynthetic}) | summarize by service = service_name)\n    | summarize by service\n    | project value = service, label = service;\nlet n = toscalar(rows | count);\nrows\n| union (print value = \"(no data yet)\", label = \"(no data yet)\" | where n == 0)\n| order by label asc\n",
          "queryType": 0,
          "resourceType": "microsoft.operationalinsights/workspaces",
          "crossComponentResources": [
@@ -2384,7 +2384,7 @@
           "showDefault": false
          },
          "timeContext": {
-          "durationMs": 86400000
+          "durationMs": 94608000000
          },
          "value": "Virtual Machines",
          "isGlobal": false
@@ -2396,7 +2396,7 @@
          "label": "Region",
          "type": 2,
          "isRequired": true,
-         "query": "AzMaintenance_EventServices({IncludeSynthetic})\n| summarize by region\n| project value = region, label = region\n| order by label asc\n",
+         "query": "let rows = AzMaintenance_EventServices({IncludeSynthetic})\n    | summarize by region\n    | project value = region, label = region;\nlet n = toscalar(rows | count);\nrows\n| union (print value = \"(no data yet)\", label = \"(no data yet)\" | where n == 0)\n| order by label asc\n",
          "queryType": 0,
          "resourceType": "microsoft.operationalinsights/workspaces",
          "crossComponentResources": [
@@ -2407,7 +2407,7 @@
           "showDefault": false
          },
          "timeContext": {
-          "durationMs": 86400000
+          "durationMs": 94608000000
          },
          "isGlobal": false
         },
@@ -2425,7 +2425,7 @@
          "jsonData": "[{\"value\": \"1\", \"label\": \"1\", \"selected\": true}, {\"value\": \"3\", \"label\": \"3\", \"selected\": false}, {\"value\": \"5\", \"label\": \"5\", \"selected\": false}]",
          "value": "1",
          "timeContext": {
-          "durationMs": 86400000
+          "durationMs": 94608000000
          }
         },
         {
@@ -2437,7 +2437,7 @@
          "isRequired": true,
          "value": "99.95,99.99",
          "timeContext": {
-          "durationMs": 86400000
+          "durationMs": 94608000000
          }
         },
         {
@@ -2454,7 +2454,7 @@
          "jsonData": "[{\"value\": \"serial\", \"label\": \"Serial (all must be up)\", \"selected\": true}, {\"value\": \"redundant\", \"label\": \"Redundant (any one is enough)\", \"selected\": false}]",
          "value": "serial",
          "timeContext": {
-          "durationMs": 86400000
+          "durationMs": 94608000000
          }
         }
        ],
@@ -2474,7 +2474,7 @@
        "noDataMessage": "No planning range yet for this service. Ranges are computed daily once events are in the ledger.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2554,7 +2554,7 @@
        "noDataMessage": "No planning ranges for your estate yet.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2596,7 +2596,7 @@
        "noDataMessage": "No PIR baseline yet.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2638,7 +2638,7 @@
        "noDataMessage": "No planning ranges yet. They are computed daily once events are in the ledger.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2798,7 +2798,7 @@
        "noDataMessage": "Service not in the catalog.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -2916,7 +2916,7 @@
        "noDataMessage": "Enter component SLAs, e.g. 99.95,99.99.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -3021,7 +3021,7 @@
        "noDataMessage": "No ingest runs recorded yet.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
@@ -3101,7 +3101,7 @@
        "noDataMessage": "No ingest runs recorded yet.",
        "noDataMessageStyle": 4,
        "timeContext": {
-        "durationMs": 86400000
+        "durationMs": 94608000000
        },
        "queryType": 0,
        "resourceType": "microsoft.operationalinsights/workspaces",
