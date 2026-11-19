@@ -15,9 +15,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
-$cfg = Import-AolEnv -Path $EnvFile
-$ws = $cfg.AOL_WORKSPACE_ID
-if (-not $ws) { throw 'AOL_WORKSPACE_ID (workspace customer id) missing in .env' }
+$cfg = Import-AmlEnv -Path $EnvFile
+$ws = $cfg.AML_WORKSPACE_ID
+if (-not $ws) { throw 'AML_WORKSPACE_ID (workspace customer id) missing in .env' }
 
 $q = @"
 Usage

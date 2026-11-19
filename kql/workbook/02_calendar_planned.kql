@@ -1,0 +1,14 @@
+// purpose: calendar heatmap, one row per week and one column per day: planned maintenance notices whose window started that day (distinct TrackingId).
+// outputs: week, Sun, Mon, Tue, Wed, Thu, Fri, Sat
+//#include _prelude
+let days = es
+    | where class == "Planned"
+    | summarize n = dcount(tracking_id) by day = startofday(impact_start_utc)
+    | extend week = startofweek(day), dow = toint(dayofweek(day) / 1d)
+    | summarize Sun = sumif(n, dow == 0), Mon = sumif(n, dow == 1), Tue = sumif(n, dow == 2), Wed = sumif(n, dow == 3),
+                Thu = sumif(n, dow == 4), Fri = sumif(n, dow == 5), Sat = sumif(n, dow == 6) by week;
+range week from startofweek({TimeRange:start}) to startofweek({TimeRange:end}) step 7d
+| join kind=leftouter days on week
+| project week, Sun = coalesce(Sun, long(0)), Mon = coalesce(Mon, long(0)), Tue = coalesce(Tue, long(0)), Wed = coalesce(Wed, long(0)),
+          Thu = coalesce(Thu, long(0)), Fri = coalesce(Fri, long(0)), Sat = coalesce(Sat, long(0))
+| order by week desc

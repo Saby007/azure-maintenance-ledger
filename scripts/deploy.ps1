@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS  Deploys the Azure Maintenance Ledger resource-group template to the sandbox subscription in .env.
 .DESCRIPTION
-  Confirms the active subscription equals AOL_SUBSCRIPTION_ID, ensures the resource group, then runs what-if.
+  Confirms the active subscription equals AML_SUBSCRIPTION_ID, ensures the resource group, then runs what-if.
   -WhatIf stops after what-if. Without it, deployment proceeds after what-if (use -NoConfirm to skip the prompt).
   Extra Bicep parameters can be passed with -Parameters, e.g. -Parameters @('deployWorkbook=false').
 #>
@@ -15,23 +15,23 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
-$cfg = Import-AolEnv -Path $EnvFile
-Assert-AolSubscription -SubscriptionId $cfg.AOL_SUBSCRIPTION_ID
+$cfg = Import-AmlEnv -Path $EnvFile
+Assert-AmlSubscription -SubscriptionId $cfg.AML_SUBSCRIPTION_ID
 
-$rg = $cfg.AOL_RESOURCE_GROUP
-$loc = $cfg.AOL_LOCATION
+$rg = $cfg.AML_RESOURCE_GROUP
+$loc = $cfg.AML_LOCATION
 $template = Join-Path $PSScriptRoot '..\infra\main.bicep'
 
 az bicep build --file $template --stdout 1>$null
 if ($LASTEXITCODE) { throw 'bicep build failed' }
 
-if (-not (az group exists --name $rg --subscription $cfg.AOL_SUBSCRIPTION_ID | ConvertFrom-Json)) {
+if (-not (az group exists --name $rg --subscription $cfg.AML_SUBSCRIPTION_ID | ConvertFrom-Json)) {
   Write-Host "Creating resource group $rg in $loc"
-  az group create --name $rg --location $loc --subscription $cfg.AOL_SUBSCRIPTION_ID --tags app=azure-maintenance-ledger -o none
+  az group create --name $rg --location $loc --subscription $cfg.AML_SUBSCRIPTION_ID --tags app=azure-maintenance-ledger -o none
 }
 
-$common = @('--resource-group', $rg, '--subscription', $cfg.AOL_SUBSCRIPTION_ID, '--template-file', $template,
-  '--parameters', "location=$loc", "prefix=$($cfg.AOL_PREFIX)") + $Parameters
+$common = @('--resource-group', $rg, '--subscription', $cfg.AML_SUBSCRIPTION_ID, '--template-file', $template,
+  '--parameters', "location=$loc", "prefix=$($cfg.AML_PREFIX)") + $Parameters
 
 Write-Host '== what-if =='
 az deployment group what-if @common
@@ -41,5 +41,5 @@ if ($WhatIf) { return }
 if (-not $NoConfirm) {
   if ((Read-Host 'Deploy these changes? (yes/no)') -ne 'yes') { Write-Host 'Cancelled.'; return }
 }
-az deployment group create @common --name aol-main --query properties.outputs -o json
+az deployment group create @common --name aml-main --query properties.outputs -o json
 if ($LASTEXITCODE) { throw 'deployment failed' }

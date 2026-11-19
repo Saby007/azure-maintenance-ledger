@@ -16,7 +16,7 @@ var script = '''
 set -e
 cd /tmp
 python3 -m pip install -q --no-cache-dir --disable-pip-version-check requests
-python3 -c "import os,requests,zipfile;r=requests.get(os.environ['AOL_PACKAGE_URL'],timeout=120);r.raise_for_status();open('app.zip','wb').write(r.content);zipfile.ZipFile('app.zip').extractall('app')"
+python3 -c "import os,requests,zipfile;r=requests.get(os.environ['AML_PACKAGE_URL'],timeout=120);r.raise_for_status();open('app.zip','wb').write(r.content);zipfile.ZipFile('app.zip').extractall('app')"
 cd app
 python3 -m pip install -q --no-cache-dir --disable-pip-version-check -r requirements.txt
 PYTHONPATH=. python3 -m collector.job collect
@@ -69,9 +69,9 @@ resource job 'Microsoft.App/jobs@2024-03-01' = {
           resources: { cpu: json('0.5'), memory: '1Gi' }
           command: ['/bin/sh', '-c']
           args: [replace(script, '\r', '')] // strip CR so the script also works when this file is saved with Windows line endings
-          env: [for k in objectKeys(union({ AOL_PACKAGE_URL: packageUri }, appSettings)): {
+          env: [for k in objectKeys(union({ AML_PACKAGE_URL: packageUri }, appSettings)): {
             name: k
-            value: union({ AOL_PACKAGE_URL: packageUri }, appSettings)[k]
+            value: union({ AML_PACKAGE_URL: packageUri }, appSettings)[k]
           }]
         }
       ]

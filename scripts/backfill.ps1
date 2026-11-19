@@ -3,7 +3,7 @@
 .SYNOPSIS  One-time / on-demand backfill (public PIRs, ARG events, REST events back 365 days, Activity Log 89 days, inventory).
 .DESCRIPTION
   Wraps `python -m collector.backfill`. Requires: az login, Reader on the subscriptions, Monitoring Metrics Publisher on the DCR,
-  and AOL_DCR_ENDPOINT / AOL_DCR_IMMUTABLE_ID in .env. Use -DryRun to count rows without uploading.
+  and AML_DCR_ENDPOINT / AML_DCR_IMMUTABLE_ID in .env. Use -DryRun to count rows without uploading.
 #>
 [CmdletBinding()]
 param(

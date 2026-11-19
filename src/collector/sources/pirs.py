@@ -19,7 +19,7 @@ from typing import Protocol
 from ..ingest import row_key, stamp, utc_iso
 from .pir_parser import PirWindow, category_of, load_overrides, normalize, parse_window
 
-log = logging.getLogger("aol.pirs")
+log = logging.getLogger("aml.pirs")
 
 BASE_URL = "https://azure.status.microsoft/en-us/statushistoryapi/"
 USER_AGENT = "azure-maintenance-ledger/0.1 (customer-run ledger; low volume, >=1s between requests)"

@@ -1,10 +1,10 @@
 #Requires -Version 7
 <#
-.SYNOPSIS  Enables the aol-export Activity Log export (ServiceHealth + ResourceHealth) on every subscription in config/subscriptions.json.
+.SYNOPSIS  Enables the aml-export Activity Log export (ServiceHealth + ResourceHealth) on every subscription in config/subscriptions.json.
 .DESCRIPTION
   Inspects existing diagnostic settings first and NEVER changes or deletes a setting it does not own:
-    - setting 'aol-export' already points at this workspace  -> skipped (idempotent)
-    - setting 'aol-export' points at another workspace       -> stops with an error for that subscription
+    - setting 'aml-export' already points at this workspace  -> skipped (idempotent)
+    - setting 'aml-export' points at another workspace       -> stops with an error for that subscription
     - subscription already has 5 settings (the limit)        -> skipped with a warning
   Requires the identity running the script to be allowed to create diagnostic settings on each subscription.
 #>
@@ -13,7 +13,7 @@ param(
   [Parameter(Mandatory)][string]$WorkspaceResourceId,
   [switch]$WhatIf,
   [string]$Config = (Join-Path $PSScriptRoot '..\config\subscriptions.json'),
-  [string]$SettingName = 'aol-export'
+  [string]$SettingName = 'aml-export'
 )
 $ErrorActionPreference = 'Stop'
 $limit = 5
@@ -30,6 +30,6 @@ foreach ($s in $subs) {
   Write-Host "  existing settings (untouched): $((@($existing) | ForEach-Object n) -join ', ')"
   $args2 = @('--location', 'centralindia', '--subscription', $s.id, '--template-file', $template, '--parameters', "workspaceId=$WorkspaceResourceId", "settingName=$SettingName")
   if ($WhatIf) { az deployment sub what-if @args2 --result-format ResourceIdOnly; continue }
-  az deployment sub create @args2 --name "aol-export" -o none
+  az deployment sub create @args2 --name "aml-export" -o none
   if ($LASTEXITCODE) { Write-Warning "  export deployment failed for $($s.id)" } else { Write-Host '  enabled' }
 }

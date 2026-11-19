@@ -3,10 +3,10 @@
 ```mermaid
 flowchart TB
   subgraph Subscription["Each target subscription"]
-    DS["Diagnostic setting aol-export<br/>(ServiceHealth, ResourceHealth)"]
+    DS["Diagnostic setting aml-export<br/>(ServiceHealth, ResourceHealth)"]
   end
   subgraph RG["Resource group (customer tenant)"]
-    LAW[("Log Analytics workspace aol-law<br/>730 d retention, 0.5 GB/day cap")]
+    LAW[("Log Analytics workspace aml-law<br/>730 d retention, 0.5 GB/day cap")]
     DCR["Direct DCR (logsIngestion endpoint)"]
     JOB["Container Apps Job (hourly, consumption)<br/>system-assigned identity, no storage account"]
     WB["Workbook (shared)"]
@@ -25,7 +25,7 @@ flowchart TB
 
 | Component | Where | Notes |
 |-----------|-------|-------|
-| Activity Log export | `infra/export.bicep` (subscription scope) | `aol-export`; ServiceHealth + ResourceHealth only |
+| Activity Log export | `infra/export.bicep` (subscription scope) | `aml-export`; ServiceHealth + ResourceHealth only |
 | Workspace, tables, DCR | `infra/modules/{workspace,tables,dcr}.bicep`, `infra/schemas/tables.json` | tables are Analytics plan; the schema file is the single source for tables and DCR streams |
 | Collector job | `infra/modules/collectorjob.bicep`, `src/collector/job.py` | Container Apps Job on the consumption profile, cron `15 * * * *` (UTC). Each run downloads `release/app.zip`, installs `requirements.txt` and runs `python -m collector.job collect`. Environment logs go to the workspace through a diagnostic setting (no keys) |
 | What a run does | `src/collector/job.py` | first runs bootstrap step by step (catalog, PIRs, Service Health via ARG and REST, Activity Log history, inventory, VM annotations); afterwards each task runs when due: Service Health and inventory daily, VM annotations every 6 h, PIRs monthly (from day 2), planning ranges daily. Failed tasks fail the job and are retried at the next run |

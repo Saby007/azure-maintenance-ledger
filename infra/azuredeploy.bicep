@@ -14,7 +14,7 @@ param resourceGroupName string = 'rg-azure-maintenance-ledger'
 @description('Short prefix for resource names (3-8 lowercase letters or digits).')
 @minLength(3)
 @maxLength(8)
-param prefix string = 'aol'
+param prefix string = 'aml'
 
 @description('new = create a dedicated workspace (recommended). existing = reuse a workspace you name below (same subscription).')
 @allowed(['new', 'existing'])
@@ -56,7 +56,7 @@ param packageUri string = 'https://raw.githubusercontent.com/Saby007/azure-maint
 param enableActivityLogExport bool = true
 
 @description('Name of the diagnostic setting created on the subscription. WARNING: a setting with this name that already points elsewhere is overwritten, so change the name if one exists.')
-param activityLogExportName string = 'aol-export'
+param activityLogExportName string = 'aml-export'
 
 @description('Grant the collector job identity Reader on this subscription (needs Owner or User Access Administrator).')
 param grantReaderOnSubscription bool = true
@@ -71,7 +71,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
 }
 
 module core 'main.bicep' = {
-  name: 'aol-core'
+  name: 'aml-core'
   scope: rg
   params: {
     location: location
@@ -91,14 +91,14 @@ module core 'main.bicep' = {
 }
 
 module reader 'modules/reader-sub.bicep' = if (grantReaderOnSubscription) {
-  name: 'aol-reader'
+  name: 'aml-reader'
   params: {
     principalId: core.outputs.collectorPrincipalId
   }
 }
 
 module activityLogExport 'export.bicep' = if (enableActivityLogExport) {
-  name: 'aol-activity-log-export'
+  name: 'aml-activity-log-export'
   params: {
     workspaceId: core.outputs.workspaceResourceId
     settingName: activityLogExportName

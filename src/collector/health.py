@@ -12,7 +12,7 @@ from typing import Any
 
 from .ingest import row_key, stamp, utc_iso
 
-log = logging.getLogger("aol.health")
+log = logging.getLogger("aml.health")
 
 
 @dataclass

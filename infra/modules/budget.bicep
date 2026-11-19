@@ -4,7 +4,7 @@ param contactEmail string
 param startDate string = utcNow('yyyy-MM-01')
 
 resource budget 'Microsoft.Consumption/budgets@2023-05-01' = {
-  name: 'aol-monthly'
+  name: 'aml-monthly'
   properties: {
     category: 'Cost'
     amount: amount

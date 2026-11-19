@@ -53,7 +53,7 @@ def main() -> int:
     ap.add_argument("--wait", type=int, default=240, help="seconds to wait for ingestion after each run")
     a = ap.parse_args()
     load_env(ROOT / ".env")
-    reader = LogsReader(os.environ["AOL_WORKSPACE_ID"])
+    reader = LogsReader(os.environ["AML_WORKSPACE_ID"])
 
     base_d, base_r = snapshot(reader, DEDUP), snapshot(reader, RAW)
     print("baseline dedup:", base_d, "\nbaseline raw:  ", base_r)

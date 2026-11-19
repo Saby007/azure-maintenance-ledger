@@ -12,7 +12,7 @@ import time
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, TypeVar
 
-log = logging.getLogger("aol.ingest")
+log = logging.getLogger("aml.ingest")
 
 T = TypeVar("T")
 
@@ -73,8 +73,8 @@ class Ingestor:
     """Uploads rows to the Direct DCR through the Logs Ingestion API using the managed identity."""
 
     def __init__(self, endpoint: str | None = None, rule_id: str | None = None, credential: Any = None):
-        self.endpoint = endpoint or os.environ["AOL_DCR_ENDPOINT"]
-        self.rule_id = rule_id or os.environ["AOL_DCR_IMMUTABLE_ID"]
+        self.endpoint = endpoint or os.environ["AML_DCR_ENDPOINT"]
+        self.rule_id = rule_id or os.environ["AML_DCR_IMMUTABLE_ID"]
         if credential is None:
             from azure.identity import DefaultAzureCredential
 

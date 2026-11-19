@@ -63,7 +63,8 @@ def summary_query(file: str, days: int) -> str:
 def collect(reader: Reader, days: int) -> dict[str, Any]:
     out: dict[str, Any] = {"summary": {}, "sheets": {}}
     for key, file in SUMMARY_QUERIES.items():
-        out["summary"][key] = reader.rows(summary_query(file, days), max(days, 800))
+        # sparkline series are for the Workbook only
+        out["summary"][key] = [{k: v for k, v in r.items() if k != "trend"} for r in reader.rows(summary_query(file, days), max(days, 800))]
     for sheet in SHEETS:
         out["sheets"][sheet] = reader.rows(report_query(sheet, days), 800)
     return out
@@ -256,7 +257,7 @@ def main(argv: list[str] | None = None, reader_factory: Callable[[str], Reader] 
     from collector.backfill import load_env
 
     load_env(ROOT / ".env")
-    ws = a.workspace or os.environ["AOL_WORKSPACE_ID"]
+    ws = a.workspace or os.environ["AML_WORKSPACE_ID"]
     if reader_factory is None:
         from collector.forecast_job import LogsReader
 

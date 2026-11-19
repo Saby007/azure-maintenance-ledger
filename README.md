@@ -20,7 +20,7 @@ Click the button, sign in, pick the subscription and a region, review the parame
 | 10 KQL functions + the **Azure Maintenance Ledger Workbook** | ten tabs; open it from Azure Monitor -> Workbooks |
 | Collector: Container Apps Job (hourly) | managed identity, **no storage account**, no Application Insights; downloads [release/app.zip](release/app.zip) at each run |
 | Roles | Reader on the subscription, Monitoring Metrics Publisher on the DCR, Log Analytics Reader on the workspace |
-| Activity Log export | ServiceHealth + ResourceHealth to the new workspace (diagnostic setting `aol-export`) |
+| Activity Log export | ServiceHealth + ResourceHealth to the new workspace (diagnostic setting `aml-export`) |
 | Stale-ingest alert | optional email via `alertEmail` |
 
 The collector job runs hourly at :15 UTC. Its first runs load the service catalog, public PIRs, the Service Health history (365 days through REST), the Resource Health history (89 days), the resource inventory and VM annotations; a step that fails (for example a role still propagating) is retried at the next run. Afterwards each task runs when due (Service Health and inventory daily, VM annotations every 6 h, PIRs monthly, planning ranges daily). **Expect data in the Workbook within about 90 minutes of the deployment finishing**; the *Data health* tab shows progress. The planning ranges appear about an hour after the history is loaded.
@@ -28,7 +28,7 @@ The collector job runs hourly at :15 UTC. Its first runs load the service catalo
 Requirements: **Owner** on the subscription (or Contributor plus User Access Administrator), because the template creates role assignments, and the `Microsoft.App`, `Microsoft.Insights` and `Microsoft.OperationalInsights` resource providers registered (they are on by default in most subscriptions).
 
 **Before you click**
-- If the subscription already has a diagnostic setting named `aol-export` that points elsewhere, set `activityLogExportName` to another name (the template would overwrite it). Subscriptions are limited to 5 diagnostic settings.
+- If the subscription already has a diagnostic setting named `aml-export` that points elsewhere, set `activityLogExportName` to another name (the template would overwrite it). Subscriptions are limited to 5 diagnostic settings.
 - The collector needs outbound internet access to raw.githubusercontent.com, pypi.org and Azure endpoints. It uses no storage account, so policies that disable public access on storage (common in governed subscriptions) do not affect it.
 - The job downloads and runs the code in [release/app.zip](release/app.zip) from this repository at every run. To control updates, fork the repository or pin the `packageUri` parameter to a commit or tag URL.
 - Public PIR collection uses an undocumented Microsoft endpoint. Turn `enablePirs` off if that is not acceptable for your organisation.
@@ -47,7 +47,7 @@ flowchart LR
     PIR["Public PIRs<br/>(optional, monthly)"]
     REF["reference/service_catalog.csv"]
   end
-  AL -- "diagnostic setting aol-export" --> AA[("AzureActivity<br/>raw, free ingestion")]
+  AL -- "diagnostic setting aml-export" --> AA[("AzureActivity<br/>raw, free ingestion")]
   ARG --> FN["Container Apps Job (hourly)<br/>managed identity, no storage"]
   REST --> BF["backfill CLI"]
   PIR --> FN
@@ -79,7 +79,7 @@ Flow: sources -> collectors -> Log Analytics -> KQL functions -> Workbook, repor
 The button above is the simplest route. For development, or to deploy into an existing resource group, use the scripts. Prerequisites: PowerShell 7, Azure CLI with Bicep, Python 3.11+ (3.13 tested). Sign in with `az login` to an identity that can create resources and diagnostic settings.
 
 ```powershell
-copy .env.example .env                      # set AOL_SUBSCRIPTION_ID / AOL_RESOURCE_GROUP / AOL_LOCATION
+copy .env.example .env                      # set AML_SUBSCRIPTION_ID / AML_RESOURCE_GROUP / AML_LOCATION
 az account show                              # confirm the subscription
 .\scripts\deploy.ps1 -WhatIf                 # review
 .\scripts\deploy.ps1                         # deploy (prints outputs: workspace id, DCR endpoint, ...)
@@ -127,7 +127,7 @@ Runbook: [docs/runbook.md](docs/runbook.md). Cost: [docs/cost.md](docs/cost.md).
 
 ## Uninstall
 
-1. Remove the Activity Log export: `az monitor diagnostic-settings subscription delete --name aol-export --subscription <id> --yes` (leave any other setting alone).
+1. Remove the Activity Log export: `az monitor diagnostic-settings subscription delete --name aml-export --subscription <id> --yes` (leave any other setting alone).
 2. Delete the resource group (`az group delete -n <rg>`), which removes the workspace (and the ledger), DCR, Container Apps environment and job, and Workbook.
 3. Remove the Reader role assignment created for the job identity (it disappears with the identity, but check the subscription scope).
 

@@ -12,7 +12,7 @@ from typing import Any
 
 from ..ingest import dumps_compact, retry, row_key, stamp, utc_iso
 
-log = logging.getLogger("aol.arg")
+log = logging.getLogger("aml.arg")
 
 def _find_kql_dir() -> Path:
     here = Path(__file__).resolve()

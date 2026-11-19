@@ -14,7 +14,7 @@ from .ingest import Ingestor, utc_iso
 from .sources import arg, pirs, rest
 from .state import WatermarkStore
 
-log = logging.getLogger("aol.collectors")
+log = logging.getLogger("aml.collectors")
 
 MIN_PLAUSIBLE_PIRS = 30  # the public history holds ~80; far fewer means a truncated fetch
 
@@ -28,7 +28,7 @@ def _root() -> Path:
 
 
 def configured_subscriptions() -> list[str]:
-    env = os.environ.get("AOL_SUBSCRIPTIONS", "").strip()
+    env = os.environ.get("AML_SUBSCRIPTIONS", "").strip()
     if env:
         return [s.strip() for s in env.split(",") if s.strip()]
     cfg = _root() / "config" / "subscriptions.json"

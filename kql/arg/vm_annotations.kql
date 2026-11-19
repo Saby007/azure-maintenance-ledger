@@ -1,5 +1,5 @@
 // purpose: VM Resource Health annotations (Planned/Unplanned, platform vs user initiated). Latest state + 14 days of changes only.
-// UNVERIFIED in the sandbox (no VMs): property names follow AGENTS.md A2; module is behind AOL_ENABLE_VM_ANNOTATIONS.
+// UNVERIFIED in the sandbox (no VMs): property names follow AGENTS.md A2; module is behind AML_ENABLE_VM_ANNOTATIONS.
 // outputs: subscription_id, resource_id, region, annotation_name, category, context, reason, availability_state, previous_availability_state, occurred_utc, summary
 HealthResources
 | where type =~ "microsoft.resourcehealth/resourceannotations"

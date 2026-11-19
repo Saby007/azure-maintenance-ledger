@@ -1,4 +1,4 @@
-function Import-AolEnv {
+function Import-AmlEnv {
   param([string]$Path)
   if (-not (Test-Path $Path)) { throw ".env not found at $Path (copy .env.example)" }
   $h = @{}
@@ -9,7 +9,7 @@ function Import-AolEnv {
   return $h
 }
 
-function Assert-AolSubscription {
+function Assert-AmlSubscription {
   param([string]$SubscriptionId)
   $acct = az account show -o json | ConvertFrom-Json
   Write-Host "Signed in as $($acct.user.name); active subscription: $($acct.name) ($($acct.id))"

@@ -1,11 +1,15 @@
 // purpose: IaaS/PaaS (and other categories) service table: events, exposure P50/P90 (event windows), observed downtime, availability vs SLA.
-// outputs: category, service, events, unplanned, planned, exposure_p50_h, exposure_p90_h, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate
+// outputs: category, service, trend (weekly sparkline), events, unplanned, planned, exposure_p50_h, exposure_p90_h, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate
 //#include _prelude
+let trend_by_service = es | where class in ("Planned", "Unplanned")
+    | make-series trend = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d by service;
 let per_event = es | where class in ("Planned", "Unplanned") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, service, category;
 per_event
 | summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == "Unplanned"), planned = dcountif(tracking_id, class == "Planned"),
             exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by service, category
+| join kind=leftouter (trend_by_service | project service, trend) on service
+| project-away service1
 | join kind=fullouter (avail | project service = service_name, category, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate) on service
-| project category = coalesce(category, category1), service = coalesce(service, service1), events = coalesce(events, 0), unplanned = coalesce(unplanned, 0),
+| project category = coalesce(category, category1), service = coalesce(service, service1), trend, events = coalesce(events, 0), unplanned = coalesce(unplanned, 0),
           planned = coalesce(planned, 0), exposure_p50_h, exposure_p90_h, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate
 | order by category asc, events desc

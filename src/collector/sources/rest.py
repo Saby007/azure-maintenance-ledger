@@ -12,7 +12,7 @@ from typing import Any
 from ..ingest import retry, row_key, stamp, utc_iso
 from .arg import clean_summary, parse_ts, services_and_regions
 
-log = logging.getLogger("aol.rest")
+log = logging.getLogger("aml.rest")
 
 ARM = "https://management.azure.com"
 SCOPE = "https://management.azure.com/.default"

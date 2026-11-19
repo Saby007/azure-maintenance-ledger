@@ -12,7 +12,7 @@ from analytics import forecast
 from .health import RunResult
 from .ingest import Ingestor
 
-log = logging.getLogger("aol.forecast")
+log = logging.getLogger("aml.forecast")
 
 
 def _query_dir() -> Path:

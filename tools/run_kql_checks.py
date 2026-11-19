@@ -99,7 +99,7 @@ def main() -> int:
     ap.add_argument("--workspace")
     a = ap.parse_args()
     load_env(ROOT / ".env")
-    ws = a.workspace or os.environ["AOL_WORKSPACE_ID"]
+    ws = a.workspace or os.environ["AML_WORKSPACE_ID"]
     reader = LogsReader(ws)
     s = "true" if a.synthetic else "false"
     results: list[tuple[str, str, object]] = []

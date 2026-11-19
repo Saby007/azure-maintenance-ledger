@@ -3,13 +3,13 @@
 ## Daily health
 
 1. Open the Workbook -> **9 Data health**. Every enabled source should show `OK` with a last success within 36 h; "PIR window parse failures" should be 0; "subscriptions covered vs configured" should match.
-2. The log alert `aol-stale-ingest` fires when an enabled collector has no `success`/`partial` run for 36 h (`servicehealth_events`, `inventory`, `forecast`, plus `public_pirs`, `vm_annotations` when enabled). Set `alertEmail` at deploy to create the action group.
+2. The log alert `aml-stale-ingest` fires when an enabled collector has no `success`/`partial` run for 36 h (`servicehealth_events`, `inventory`, `forecast`, plus `public_pirs`, `vm_annotations` when enabled). Set `alertEmail` at deploy to create the action group.
 
 ## Symptoms
 
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
-| Source STALE | the hourly job failed or cannot reach ARG/GitHub/PyPI | Container Apps job `aol-collect` -> Execution history (status Failed); console logs are in the workspace table `ContainerAppConsoleLogs_CL` (also `ContainerAppSystemLogs_CL`) when the diagnostic setting is in place. Check the job identity still has Reader. Re-run: `az containerapp job start -n aol-collect -g <rg>`, or locally `python -m collector.backfill --only arg,inventory` |
+| Source STALE | the hourly job failed or cannot reach ARG/GitHub/PyPI | Container Apps job `aml-collect` -> Execution history (status Failed); console logs are in the workspace table `ContainerAppConsoleLogs_CL` (also `ContainerAppSystemLogs_CL`) when the diagnostic setting is in place. Check the job identity still has Reader. Re-run: `az containerapp job start -n aml-collect -g <rg>`, or locally `python -m collector.backfill --only arg,inventory` |
 | First data takes long | bootstrap steps retry hourly (a role may still be propagating) | wait for the next :15 run; `AzMaintenanceIngestHealth_CL` rows with `source startswith "state:bootstrap"` show which steps finished |
 | No `AzureActivity` ServiceHealth/ResourceHealth rows | export missing, or no events yet | `az monitor diagnostic-settings subscription list`; rows only arrive when a new event occurs. Backfill the last 89 days: `--only activity` |
 | ARG returns 429 | > ~15 queries / 5 s | the client backs off automatically; re-run later |

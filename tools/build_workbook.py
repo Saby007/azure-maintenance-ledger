@@ -27,7 +27,8 @@ LA = "microsoft.operationalinsights/workspaces"
 NS = uuid.UUID("5d0f4ad0-3a56-4d56-9d3a-aa0c0a0d0e01")
 
 # Grid / tile formatter ids used by the Workbooks renderer
-F_NUMBER, F_TEXT, F_HEATMAP, F_BAR, F_DATE, F_BIGNUM, F_THRESHOLDS = 2, 1, 3, 4, 6, 12, 18
+F_NUMBER, F_TEXT, F_HEATMAP, F_BAR, F_DATE, F_BIGNUM, F_THRESHOLDS, F_SPARK = 2, 1, 3, 4, 6, 12, 18, 9
+NONE = "(none)"  # value of the drill-down parameters until a row is clicked
 
 # The ledger is ingestion-time based, so panels and filter lists must read the whole retained history,
 # not the portal default of the last day.
@@ -129,6 +130,8 @@ def global_params() -> dict:
     params = [
         p_static("IncludeSynthetic", "Include synthetic test rows", [("false", "No"), ("true", "Yes (diagnostics only)")], "false", hidden=True),
         p_text("tab", "tab", "overview", hidden=True),
+        p_text("SelectedService", "Selected service", NONE, hidden=True),
+        p_text("SelectedRegion", "Selected region", NONE, hidden=True),
         time_range,
         p_dropdown_query("Subscriptions", "Subscriptions", "p_subscriptions"),
         p_dropdown_query("Category", "Category", "p_category"),
@@ -174,7 +177,10 @@ def query(name: str, title: str, qfile: str, viz: str = "table", empty: str = "N
         "visualization": viz,
     }
     content.update(extra)
-    return {"type": 3, "content": content, "name": name}
+    item = {"type": 3, "content": content, "name": name}
+    if "customWidth" in content:  # width is a property of the item, not of its content
+        item["customWidth"] = content.pop("customWidth")
+    return item
 
 
 def group(name: str, title: str, items: list[dict], visible_when: str | None = None) -> dict:
@@ -223,6 +229,19 @@ def when(col: str) -> dict:
     return {"columnMatch": col, "formatter": F_DATE, "dateFormat": {"showUtcTime": True, "formatName": "shortDateTimeNoMsPattern"}}
 
 
+def day(col: str) -> dict:
+    return {"columnMatch": col, "formatter": F_DATE, "dateFormat": {"showUtcTime": True, "formatName": "shortDatePattern"}}
+
+
+def spark(col: str, palette: str = "blue") -> dict:
+    return {"columnMatch": col, "formatter": F_SPARK, "formatOptions": {"palette": palette}}
+
+
+def visible_when(item: dict, param: str, comparison: str, value: str) -> dict:
+    item["conditionalVisibility"] = {"parameterName": param, "comparison": comparison, "value": value}
+    return item
+
+
 def class_colors(col: str = "class") -> dict:
     return thr(col, [("==", "Unplanned", COLOR_UNPLANNED), ("==", "Planned", COLOR_PLANNED), ("Default", None, "gray")], mode="colors")
 
@@ -235,7 +254,7 @@ def grid(name: str, title: str, qfile: str, formatters: list[dict], labels: dict
     return query(name, title, qfile, "table", empty, size=3, gridSettings=gs, showExportToExcel=True, **extra)
 
 
-def kpi_tiles(name: str, title: str, qfile: str, empty: str) -> dict:
+def kpi_tiles(name: str, title: str, qfile: str, empty: str, trend: bool = False) -> dict:
     ts = {
         "titleContent": {"columnMatch": "metric", "formatter": F_TEXT},
         "leftContent": {"columnMatch": "value", "formatter": F_BIGNUM, "formatOptions": {"palette": "none"},
@@ -245,7 +264,27 @@ def kpi_tiles(name: str, title: str, qfile: str, empty: str) -> dict:
         "showBorder": True,
         "size": "auto",
     }
+    if trend:
+        ts["bottomContent"] = spark("trend", "blue")
     return query(name, title, qfile, "tiles", empty, size=3, tileSettings=ts)
+
+
+def honeycomb(name: str, title: str, qfile: str, empty: str) -> dict:
+    """Hexagon map of nodes grouped by Group; hotter colour = higher Intensity (0-100). The big number is Events."""
+    gs = {
+        "type": 2,
+        "topContent": {"columnMatch": "Name", "formatter": F_TEXT},
+        "centerContent": {"columnMatch": "Events", "formatter": F_BIGNUM, "formatOptions": {"palette": "none"},
+                          "numberFormat": {"unit": 17, "options": {"maximumFractionDigits": 0, "useGrouping": True}}},
+        "hivesContent": {"columnMatch": "Group", "formatter": F_TEXT},
+        "nodeIdField": "Name",
+        "nodeSize": None,
+        "staticNodeSize": 100,
+        "colorSettings": {"nodeColorField": "Intensity", "type": 4, "heatmapPalette": "greenRed", "heatmapMin": 0, "heatmapMax": 100},
+        "groupByField": "Group",
+        "hivesMargin": 5,
+    }
+    return query(name, title, qfile, "graph", empty, size=0, graphSettings=gs)
 
 
 def chart(name: str, title: str, qfile: str, viz: str, x: str, y: list[str], *, group_by: str | None = None,
@@ -298,12 +337,13 @@ def build() -> dict:
                   "**Event time open** (exposure) is how long events were officially open. It is *not* how long your resources were down.",
                   "**Observed downtime** is the number of minutes your resources were reported *Unavailable*. Time you caused yourself (for example stopping a VM) is left out.",
                   "**Observed availability** is the share of time your resources were up, from that downtime and the number of resources you have.",
-                  "Each event is counted once, even if it affected several services or regions. Use the filters at the top to narrow the view."]),
+                  "Each event is counted once, even if it affected several services or regions. Use the filters at the top to narrow the view.",
+                  "The small **line under a number** is the weekly trend across the selected time range."]),
         grid("ov-attention", "✅ What needs your attention right now", "01_attention",
              [thr("status", STATUS_ICONS, label_text=""), {"columnMatch": "message", "formatter": F_TEXT}, {"columnMatch": "detail", "formatter": F_TEXT}],
              labels={"status": " ", "message": "Status", "detail": "What to do"}, filterable=False,
              empty="No status information yet. See the Data health tab."),
-        kpi_tiles("ov-tiles", "📊 At a glance", "01_overview_tiles", "No events in the ledger yet. See the Data health tab."),
+        kpi_tiles("ov-tiles", "📊 At a glance", "01_overview_tiles", "No events in the ledger yet. See the Data health tab.", trend=True),
         donut("ov-split", "Planned vs unplanned events", "01_overview_split", CLASS_COLORS, "No events for the current filters.", width="35"),
         chart("ov-category", "Events by category", "01_overview_by_category", "barchart", "category", ["events"], group_by="class",
               colors=CLASS_COLORS, empty="No events for the current filters.", width="65"),
@@ -317,6 +357,7 @@ def build() -> dict:
                  "How things changed month by month, so you can spot busy periods and trends, plus the longest events.",
                  ["The **first chart** counts events per month, orange for unplanned and blue for planned.",
                   "The **second chart** shows the minutes your resources were actually unavailable each month.",
+                  "The **calendars** show each week as a row and each day as a square: the darker the square, the more events started that day. Orange calendar = unplanned, blue = planned.",
                   "The two charts measure different things: a month can have many events and little or no downtime for your resources.",
                   "The **table** lists the longest events. The bar shows how long the event was open (exposure), which is not downtime."]),
         chart("tl-events", "📅 Events per month", "02_timeline_events", "columnchart", "month", ["events"], group_by="class",
@@ -324,6 +365,13 @@ def build() -> dict:
         chart("tl-downtime", "⏱️ Minutes your resources were unavailable, per month", "02_timeline_downtime", "columnchart", "month", ["downtime_min"],
               group_by="class", colors=CLASS_COLORS,
               empty="🎉 No Resource Health downtime recorded in the selected range."),
+        text("tl-cal-title", "### 📆 Event calendars (one row per week, one column per day)"),
+        grid("tl-cal-unplanned", "🟧 Unplanned events by day", "02_calendar_unplanned",
+             [day("week"), heat("Sun|Mon|Tue|Wed|Thu|Fri|Sat", "orange", 0)],
+             labels={"week": "Week starting"}, filterable=False, customWidth="50", empty="No events in the selected range."),
+        grid("tl-cal-planned", "🟦 Planned maintenance by day", "02_calendar_planned",
+             [day("week"), heat("Sun|Mon|Tue|Wed|Thu|Fri|Sat", "blue", 0)],
+             labels={"week": "Week starting"}, filterable=False, customWidth="50", empty="No events in the selected range."),
         grid("tl-longest", "🐢 Longest events in the range", "02_timeline_longest",
              [thr("status", [("==", "Open", "warning"), ("==", "Resolved", "success"), ("Default", None, "info")]),
               class_colors("class"), bar("exposure_h", "orange"), when("started")],
@@ -339,20 +387,32 @@ def build() -> dict:
                  ["**IaaS** = infrastructure you manage (virtual machines, disks). **PaaS** = managed services (App Service, containers). The other groups are Network, Data, Identity and AI.",
                   "**Events** = number of incidents and maintenance notices. **Typical / long event** = how long events lasted: half were shorter than *typical*, 9 in 10 were shorter than *long*.",
                   "**Downtime** = minutes your resources of that service were unavailable. **Availability** is coloured green (99.9% or better), yellow (99% or better) or red.",
-                  "**SLA not set** means no SLA percentage has been entered for that service yet. SLA values are never guessed; they come from `reference/service_catalog.csv` with a source."]),
+                  "**SLA not set** means no SLA percentage has been entered for that service yet. SLA values are never guessed; they come from `reference/service_catalog.csv` with a source.",
+                  "The **hexagon map** shows each service as a cell, grouped by type: the redder the cell, the more events it had. In the scorecard, the small line is the weekly trend. **Click a row** to see that service's events underneath."]),
         chart("sv-downtime", "⏱️ Services with the most unavailable minutes", "03_services_downtime", "barchart", "service_name", ["downtime_min"],
               colors={"downtime_min": "redBright"}, labels={"downtime_min": "Unavailable minutes"},
               empty="🎉 No downtime recorded for these services in the selected range."),
+        honeycomb("sv-honeycomb", "🐝 Service heat map (one hexagon per service, grouped by type; redder = more events)", "03_services_honeycomb",
+                  "No service data for the current filters."),
+        text("sv-click", "👆 **Click a row in the scorecard below** to list the events of that service underneath it."),
         grid("sv-table", "🧩 Service scorecard", "03_services",
-             [bar("events", "blue", 0), bar("unplanned", "orange", 0), bar("planned", "blue", 0), num("exposure_p50_h"), num("exposure_p90_h"),
+             [spark("trend", "blue"), bar("events", "blue", 0), bar("unplanned", "orange", 0), bar("planned", "blue", 0), num("exposure_p50_h"), num("exposure_p90_h"),
               bar("downtime_min", "redBright"),
               thr("availability_pct", [(">=", "99.9", "green"), (">=", "99", "yellow"), ("Default", None, "redBright")], mode="colors"),
               thr("sla_status", [("==", "Within SLA", "success"), ("==", "Below SLA", "critical"), ("Default", None, "Disable")])],
              labels={"category": "Type", "service": "Service", "events": "Events", "unplanned": "Unplanned", "planned": "Planned",
                      "exposure_p50_h": "Typical event (h)", "exposure_p90_h": "Long event (h)", "resources": "Resources",
                      "downtime_min": "Downtime (min)", "availability_pct": "Availability (%)", "sla_percent": "SLA (%)",
-                     "sla_status": "SLA check", "approximate": "Approximate"},
-             empty="No service data for the current filters."),
+                     "sla_status": "SLA check", "approximate": "Approximate", "trend": "Weekly trend"},
+             empty="No service data for the current filters.",
+             exportFieldName="service", exportParameterName="SelectedService", exportDefaultValue=NONE),
+        visible_when(grid("sv-detail", "🔎 Events of the selected service", "03_service_detail",
+                          [thr("status", [("==", "Open", "warning"), ("==", "Resolved", "success"), ("Default", None, "info")]),
+                           class_colors("class"), bar("exposure_h", "orange"), when("started")],
+                          labels={"status": "Status", "class": "Type", "event_title": "Event", "regions": "Regions", "started": "Started (UTC)",
+                                  "exposure_h": "Open for (hours)", "tracking_id": "Tracking ID"},
+                          empty="No events for this service in the selected range."),
+                     "SelectedService", "isNotEqualTo", NONE),
     ], "services"))
 
     # ------------------------------------------------------------ Regions
@@ -361,7 +421,8 @@ def build() -> dict:
                  "Which Azure regions were affected by events in the selected range.",
                  ["Darker or larger bubbles on the map mean more events in that region.",
                   "One event can affect several regions, so the same event appears on several rows. **Do not add the rows up to get a total**; use the Overview page for totals.",
-                  "Use this to see whether problems cluster in the regions you rely on."]),
+                  "Use this to see whether problems cluster in the regions you rely on.",
+                  "**Click a row in the table** to list the events of that region underneath it."]),
         query("rg-map", "🗺️ Events by region", "04_regions", "map", "No regional data for the current filters.", size=1, customWidth="50",
               mapSettings={"locInfo": "AzureLoc", "locInfoColumn": "region", "sizeSettings": "events", "sizeAggregation": "Sum",
                            "legendMetric": "events", "legendAggregation": "Sum", "itemColorSettings": {"nodeColorField": "events",
@@ -373,7 +434,15 @@ def build() -> dict:
              [bar("events", "blue", 0), bar("unplanned", "orange", 0), bar("planned", "blue", 0), num("exposure_p50_h"), num("exposure_p90_h")],
              labels={"region": "Region", "events": "Events", "unplanned": "Unplanned", "planned": "Planned",
                      "exposure_p50_h": "Typical event (h)", "exposure_p90_h": "Long event (h)"},
-             empty="No regional data for the current filters."),
+             empty="No regional data for the current filters.",
+             exportFieldName="region", exportParameterName="SelectedRegion", exportDefaultValue=NONE),
+        visible_when(grid("rg-detail", "🔎 Events of the selected region", "04_region_detail",
+                          [thr("status", [("==", "Open", "warning"), ("==", "Resolved", "success"), ("Default", None, "info")]),
+                           class_colors("class"), bar("exposure_h", "orange"), when("started")],
+                          labels={"status": "Status", "class": "Type", "event_title": "Event", "services": "Services", "started": "Started (UTC)",
+                                  "exposure_h": "Open for (hours)", "tracking_id": "Tracking ID"},
+                          empty="No events for this region in the selected range."),
+                     "SelectedRegion", "isNotEqualTo", NONE),
     ], "regions"))
 
     # ------------------------------------------------------------ Resources

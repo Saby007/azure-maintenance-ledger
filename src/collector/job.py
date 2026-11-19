@@ -24,7 +24,7 @@ from .ingest import Ingestor, utc_iso
 from .sources import arg, pirs, rest
 from .state import LogState
 
-log = logging.getLogger("aol.job")
+log = logging.getLogger("aml.job")
 
 DAILY_H = 20.0
 ANNOTATIONS_H = 5.0
@@ -65,9 +65,9 @@ def run_collect(ing: Any, reader: Any, state: Any, now: dt.datetime | None = Non
         ("activity", "backfill_activity", lambda: collectors.run_activity_backfill(ing, session, subs, 89)),
         ("inventory", "inventory", lambda: collectors.run_inventory(ing, client, subs)),
     ]
-    if _flag("AOL_ENABLE_PIRS"):
+    if _flag("AML_ENABLE_PIRS"):
         steps.insert(1, ("pirs", "public_pirs", lambda: collectors.run_pirs(ing, pirs.FetchPirSource(cache_dir=pir_cache))))
-    if _flag("AOL_ENABLE_VM_ANNOTATIONS"):
+    if _flag("AML_ENABLE_VM_ANNOTATIONS"):
         steps.append(("vm_annotations", "vm_annotations", lambda: collectors.run_vm_annotations(ing, client, subs)))
 
     # ---- bootstrap: each step is marked done once, so a failed step is retried alone at the next run
@@ -119,9 +119,9 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("azure").setLevel(logging.WARNING)
     ing = Ingestor()
-    reader = LogsReader(os.environ["AOL_WORKSPACE_ID"])
+    reader = LogsReader(os.environ["AML_WORKSPACE_ID"])
     state = LogState(reader, ing, load_query)
-    results = run_collect(ing, reader, state, pir_cache=Path("/tmp/aol-pir-cache"))
+    results = run_collect(ing, reader, state, pir_cache=Path("/tmp/aml-pir-cache"))
     for k, v in results.items():
         log.info("%s: %s", k, v)
     failed = {k: v for k, v in results.items() if v.startswith("failed")}

@@ -30,7 +30,7 @@ def main() -> int:
         for s in subs
         for i in rest.fetch_rest_events(session, s, 365)
     }
-    ledger = int(LogsReader(os.environ["AOL_WORKSPACE_ID"]).rows(LEDGER_Q)[0]["ids"])
+    ledger = int(LogsReader(os.environ["AML_WORKSPACE_ID"]).rows(LEDGER_Q)[0]["ids"])
     union = len(arg_ids | rest_ids)
     print(f"ARG distinct tracking ids : {len(arg_ids)}")
     print(f"REST distinct tracking ids: {len(rest_ids)} (365 d)")

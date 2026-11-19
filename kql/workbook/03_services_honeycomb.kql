@@ -1,0 +1,11 @@
+// purpose: honeycomb of services grouped by category; the colour intensity (0-100) is the service's share of the busiest service's events.
+// outputs: Name, Events, Intensity, Group
+//#include _prelude
+let per = es
+    | where class in ("Planned", "Unplanned")
+    | summarize events = dcount(tracking_id) by service, category;
+let mx = toscalar(per | summarize max(events));
+per
+| project Name = service, Events = events, Intensity = iff(mx > 0, round(events * 100.0 / mx, 1), 0.0), Group = category
+| order by Events desc
+| take 60

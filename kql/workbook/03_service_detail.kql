@@ -1,0 +1,10 @@
+// purpose: drill-down - the events of the service clicked in the service scorecard. Exposure is the event window, NOT downtime.
+// outputs: status, class, event_title, regions, started, exposure_h, tracking_id
+//#include _prelude
+es
+| where class in ("Planned", "Unplanned") and service == '{SelectedService}'
+| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), regions = strcat_array(make_set(region, 3), ", "),
+            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class
+| project status = iff(is_open == 1, "Open", "Resolved"), class, event_title, regions, started, exposure_h, tracking_id
+| order by started desc
+| take 200

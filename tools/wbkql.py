@@ -42,6 +42,8 @@ TEST_TOKENS = {
     "{Region}": "'*'",
     "{IncludeUserInitiated}": "false",
     "{IncludeSynthetic}": "{synthetic}",
+    "{SelectedService}": "Virtual Machines",
+    "{SelectedRegion}": "East US",
     "{PlannerService}": "Virtual Machines",
     "{PlannerRegion}": "East US",
     "{PlannerHorizon}": "1",

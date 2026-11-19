@@ -3,7 +3,7 @@
 targetScope = 'subscription'
 
 param workspaceId string
-param settingName string = 'aol-export'
+param settingName string = 'aml-export'
 
 resource export 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: settingName

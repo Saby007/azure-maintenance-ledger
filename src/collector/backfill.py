@@ -1,7 +1,7 @@
 """Backfill CLI: python -m collector.backfill [--dry-run] [--only pirs,arg,rest,activity,inventory] [--pir-file path]
 
 Uses DefaultAzureCredential (your `az login` locally). Needs Reader on the subscriptions and Monitoring Metrics
-Publisher on the DCR. Env: AOL_DCR_ENDPOINT, AOL_DCR_IMMUTABLE_ID (see .env.example).
+Publisher on the DCR. Env: AML_DCR_ENDPOINT, AML_DCR_IMMUTABLE_ID (see .env.example).
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from .ingest import Ingestor
 from .sources import arg, pirs, rest
 from .state import MemoryState
 
-log = logging.getLogger("aol.backfill")
+log = logging.getLogger("aml.backfill")
 STEPS = ("pirs", "arg", "rest", "activity", "inventory")
 EXTRA_STEPS = ("forecast", "vm_annotations")  # runnable on demand, not part of the default backfill
 
@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         from .forecast_job import LogsReader, run_forecast
 
         cfg = Path(__file__).resolve().parents[2] / "config" / "forecast.yaml"
-        run("forecast", lambda: run_forecast(ing, LogsReader(os.environ["AOL_WORKSPACE_ID"]), cfg))
+        run("forecast", lambda: run_forecast(ing, LogsReader(os.environ["AML_WORKSPACE_ID"]), cfg))
     if a.dry_run:
         print(json.dumps(ing.counts, indent=2))
     return 0

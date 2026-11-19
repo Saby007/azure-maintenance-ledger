@@ -2,7 +2,7 @@
 targetScope = 'resourceGroup'
 
 param location string = resourceGroup().location
-param prefix string = 'aol'
+param prefix string = 'aml'
 @allowed(['new', 'existing'])
 param workspaceMode string = 'new'
 param existingWorkspaceName string = ''
@@ -79,12 +79,12 @@ module collector 'modules/collectorjob.bicep' = if (deployCollector) {
     packageUri: packageUri
     tags: tags
     appSettings: {
-      AOL_DCR_ENDPOINT: dcr.outputs.logsIngestionEndpoint
-      AOL_DCR_IMMUTABLE_ID: dcr.outputs.immutableId
-      AOL_WORKSPACE_ID: workspace.outputs.customerId
-      AOL_ENABLE_PIRS: string(enablePirs)
-      AOL_ENABLE_VM_ANNOTATIONS: string(enableVmAnnotations)
-      AOL_SUBSCRIPTIONS: subscriptionIds
+      AML_DCR_ENDPOINT: dcr.outputs.logsIngestionEndpoint
+      AML_DCR_IMMUTABLE_ID: dcr.outputs.immutableId
+      AML_WORKSPACE_ID: workspace.outputs.customerId
+      AML_ENABLE_PIRS: string(enablePirs)
+      AML_ENABLE_VM_ANNOTATIONS: string(enableVmAnnotations)
+      AML_SUBSCRIPTIONS: subscriptionIds
     }
   }
 }
@@ -138,7 +138,7 @@ module workbook 'modules/workbook.bicep' = if (deployWorkbook) {
   name: 'workbook'
   params: {
     location: location
-    workbookId: guid(resourceGroup().id, prefix, 'aol-workbook')
+    workbookId: guid(resourceGroup().id, prefix, 'aml-workbook')
     workspaceId: workspace.outputs.id
     serializedTemplate: loadTextContent('../workbook/workbook.deploy.json')
     tags: tags

@@ -39,8 +39,8 @@ def wired(monkeypatch):
         monkeypatch.setattr(job.collectors, name, lambda *a, _n=name, **k: calls.append(_n) or RunResult())
     monkeypatch.setattr(job, "run_forecast", lambda *a, **k: calls.append("run_forecast") or RunResult())
     monkeypatch.setattr(job, "run_collector", lambda source, fn, ing: fn())
-    monkeypatch.setenv("AOL_ENABLE_PIRS", "true")
-    monkeypatch.setenv("AOL_ENABLE_VM_ANNOTATIONS", "true")
+    monkeypatch.setenv("AML_ENABLE_PIRS", "true")
+    monkeypatch.setenv("AML_ENABLE_VM_ANNOTATIONS", "true")
     return calls
 
 
@@ -84,8 +84,8 @@ def test_failed_step_is_retried_alone_and_bootstrap_not_done(wired, monkeypatch)
 
 
 def test_pirs_step_skipped_when_disabled(wired, monkeypatch):
-    monkeypatch.setenv("AOL_ENABLE_PIRS", "false")
-    monkeypatch.setenv("AOL_ENABLE_VM_ANNOTATIONS", "false")
+    monkeypatch.setenv("AML_ENABLE_PIRS", "false")
+    monkeypatch.setenv("AML_ENABLE_VM_ANNOTATIONS", "false")
     res = collect(FakeState())
     assert "pirs" not in res and "vm_annotations" not in res
 
