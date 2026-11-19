@@ -268,7 +268,7 @@
       "id": "0fdd67ba-709b-59af-a32a-6506ed1d24d1",
       "cellValue": "tab",
       "linkTarget": "parameter",
-      "linkLabel": "🏠 Overview",
+      "linkLabel": "🏠 Executive summary",
       "subTarget": "overview",
       "style": "link"
      },
@@ -353,21 +353,103 @@
    "content": {
     "version": "NotebookGroup/1.0",
     "groupType": "editable",
-    "title": "Overview",
+    "title": "Executive summary",
     "items": [
      {
       "type": 1,
       "content": {
-       "json": "**What this page shows**\n\nA quick summary of the problems and maintenance Azure has reported for your subscriptions in the selected time range, and how much your resources were actually unavailable.\n\n**How to read it**\n\n- Start with **What needs your attention**: a short checklist. Green tick = fine, amber warning = take a look, red = act, blue info = for your information.\n- **Unplanned events** are Azure incidents that nobody scheduled. **Planned maintenance** is work Azure announced in advance.\n- **Event time open** (exposure) is how long events were officially open. It is *not* how long your resources were down.\n- **Observed downtime** is the number of minutes your resources were reported *Unavailable*. Time you caused yourself (for example stopping a VM) is left out.\n- **Observed availability** is the share of time your resources were up, from that downtime and the number of resources you have.\n- Each event is counted once, even if it affected several services or regions. Use the filters at the top to narrow the view.\n- The small **line under a number** is the weekly trend across the selected time range.",
-       "style": "info"
+       "json": "How your Azure services are doing in the selected time range. **Click any tile or checklist row to jump to the tab with the details.**"
       },
-      "name": "ov-desc"
+      "name": "ov-title"
      },
      {
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet open_u = toscalar(es | where is_open and class == \"Unplanned\" | summarize dcount(tracking_id));\nlet down_now = toscalar(iv | where state =~ \"Unavailable\" and is_open and not(stale_open) | summarize dcount(resource_id));\nlet recent = toscalar(es | where class == \"Unplanned\" and impact_start_utc > ago(7d) | summarize dcount(tracking_id));\nlet soon = toscalar(AzMaintenance_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));\nlet stale_src = toscalar(AzMaintenance_DataHealth({IncludeSynthetic}) | where section == \"ingest\" and status == \"STALE\" | summarize count());\ndatatable(order: int)[1, 2, 3, 4, 5]\n| extend status = case(order == 1, iff(open_u > 0, \"bad\", \"good\"),\n                       order == 2, iff(down_now > 0, \"bad\", \"good\"),\n                       order == 3, iff(recent > 0, \"warn\", \"good\"),\n                       order == 4, iff(soon > 0, \"info\", \"good\"),\n                       iff(stale_src > 0, \"warn\", \"good\")),\n         message = case(order == 1, iff(open_u > 0, strcat(open_u, \" Azure incident(s) still open\"), \"No Azure incidents are open right now\"),\n                        order == 2, iff(down_now > 0, strcat(down_now, \" resource(s) unavailable right now\"), \"All tracked resources are available\"),\n                        order == 3, iff(recent > 0, strcat(recent, \" unplanned event(s) in the last 7 days\"), \"No unplanned events in the last 7 days\"),\n                        order == 4, iff(soon > 0, strcat(soon, \" planned maintenance notice(s) in the next 14 days\"), \"No planned maintenance in the next 14 days\"),\n                        iff(stale_src > 0, strcat(stale_src, \" data source(s) have not reported in 36 hours\"), \"All data sources are reporting\")),\n         detail = case(order == 1, iff(open_u > 0, \"See the longest events on the Timeline tab\", \"Nothing to do\"),\n                       order == 2, iff(down_now > 0, \"See the Resources tab for which ones\", \"Nothing to do\"),\n                       order == 3, iff(recent > 0, \"See the Timeline tab for details\", \"Nothing to do\"),\n                       order == 4, iff(soon > 0, \"See the Planned maintenance tab for dates and services\", \"Nothing to do\"),\n                       iff(stale_src > 0, \"Numbers may be out of date: see the Data health tab\", \"Numbers are up to date\"))\n| project order, status, message, detail\n| order by order asc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet open_u = toscalar(es | where is_open and class == \"Unplanned\" | summarize dcount(tracking_id));\nlet down_now = toscalar(iv | where state =~ \"Unavailable\" and is_open and not(stale_open) | summarize dcount(resource_id));\nlet recent = toscalar(es | where class == \"Unplanned\" and impact_start_utc > ago(7d) | summarize dcount(tracking_id));\nlet soon = toscalar(AzMaintenance_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));\nlet stale_src = toscalar(AzMaintenance_DataHealth({IncludeSynthetic}) | where section == \"ingest\" and status == \"STALE\" | summarize count());\nlet att = datatable(order: int)[1, 2, 3, 4, 5]\n| extend status = case(order == 1, iff(open_u > 0, \"bad\", \"good\"),\n                       order == 2, iff(down_now > 0, \"bad\", \"good\"),\n                       order == 3, iff(recent > 0, \"warn\", \"good\"),\n                       order == 4, iff(soon > 0, \"info\", \"good\"),\n                       iff(stale_src > 0, \"warn\", \"good\")),\n         message = case(order == 1, iff(open_u > 0, strcat(open_u, \" Azure incident(s) still open\"), \"No Azure incidents are open right now\"),\n                        order == 2, iff(down_now > 0, strcat(down_now, \" resource(s) unavailable right now\"), \"All tracked resources are available\"),\n                        order == 3, iff(recent > 0, strcat(recent, \" unplanned event(s) in the last 7 days\"), \"No unplanned events in the last 7 days\"),\n                        order == 4, iff(soon > 0, strcat(soon, \" planned maintenance notice(s) in the next 14 days\"), \"No planned maintenance in the next 14 days\"),\n                        iff(stale_src > 0, strcat(stale_src, \" data source(s) have not reported in 36 hours\"), \"All data sources are reporting\")),\n         detail = case(order == 1, iff(open_u > 0, \"Click to see the longest events (Timeline tab)\", \"Nothing to do\"),\n                       order == 2, iff(down_now > 0, \"Click to see which resources (Resources tab)\", \"Nothing to do\"),\n                       order == 3, iff(recent > 0, \"Click to see the details (Timeline tab)\", \"Nothing to do\"),\n                       order == 4, iff(soon > 0, \"Click to see dates and services (Planned maintenance tab)\", \"Nothing to do\"),\n                       iff(stale_src > 0, \"Numbers may be out of date. Click to open the Data health tab\", \"Numbers are up to date\")),\n         go = case(order == 1, \"timeline\", order == 2, \"resources\", order == 3, \"timeline\", order == 4, \"planned\", \"health\");\natt\n| summarize bad = countif(status == \"bad\"), warn = countif(status == \"warn\")\n| project metric = case(bad > 0, \"Action needed\", warn > 0, \"Worth a look\", \"All clear\"),\n          value = todouble(bad + warn),\n          subtitle = case(bad > 0, \"Something is unavailable or still open right now. See the checklist below.\",\n                          warn > 0, \"No outright problems, but some points need a look. See the checklist below.\",\n                          \"Nothing needs your attention right now.\"),\n          status = case(bad > 0, \"bad\", warn > 0, \"warn\", \"good\"),\n          go = \"timeline\"\n",
+       "size": 3,
+       "title": "Overall status",
+       "noDataMessage": "No status information yet. See the Data health tab.",
+       "noDataMessageStyle": 4,
+       "timeContext": {
+        "durationMs": 94608000000
+       },
+       "queryType": 0,
+       "resourceType": "microsoft.operationalinsights/workspaces",
+       "crossComponentResources": [
+        "__WORKSPACE_ID__"
+       ],
+       "visualization": "tiles",
+       "tileSettings": {
+        "titleContent": {
+         "columnMatch": "metric",
+         "formatter": 1
+        },
+        "leftContent": {
+         "columnMatch": "value",
+         "formatter": 12,
+         "formatOptions": {
+          "palette": "none"
+         },
+         "numberFormat": {
+          "unit": 17,
+          "options": {
+           "maximumFractionDigits": 3,
+           "useGrouping": true
+          }
+         }
+        },
+        "secondaryContent": {
+         "columnMatch": "subtitle",
+         "formatter": 1
+        },
+        "rightContent": {
+         "columnMatch": "status",
+         "formatter": 18,
+         "formatOptions": {
+          "thresholdsOptions": "icons",
+          "thresholdsGrid": [
+           {
+            "operator": "==",
+            "thresholdValue": "good",
+            "representation": "success",
+            "text": ""
+           },
+           {
+            "operator": "==",
+            "thresholdValue": "warn",
+            "representation": "warning",
+            "text": ""
+           },
+           {
+            "operator": "==",
+            "thresholdValue": "bad",
+            "representation": "critical",
+            "text": ""
+           },
+           {
+            "operator": "Default",
+            "thresholdValue": null,
+            "representation": "info",
+            "text": ""
+           }
+          ]
+         }
+        },
+        "showBorder": true,
+        "size": "auto"
+       },
+       "exportFieldName": "go",
+       "exportParameterName": "tab",
+       "exportDefaultValue": "overview"
+      },
+      "name": "ov-verdict"
+     },
+     {
+      "type": 3,
+      "content": {
+       "version": "KqlItem/1.0",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet open_u = toscalar(es | where is_open and class == \"Unplanned\" | summarize dcount(tracking_id));\nlet down_now = toscalar(iv | where state =~ \"Unavailable\" and is_open and not(stale_open) | summarize dcount(resource_id));\nlet recent = toscalar(es | where class == \"Unplanned\" and impact_start_utc > ago(7d) | summarize dcount(tracking_id));\nlet soon = toscalar(AzMaintenance_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));\nlet stale_src = toscalar(AzMaintenance_DataHealth({IncludeSynthetic}) | where section == \"ingest\" and status == \"STALE\" | summarize count());\nlet att = datatable(order: int)[1, 2, 3, 4, 5]\n| extend status = case(order == 1, iff(open_u > 0, \"bad\", \"good\"),\n                       order == 2, iff(down_now > 0, \"bad\", \"good\"),\n                       order == 3, iff(recent > 0, \"warn\", \"good\"),\n                       order == 4, iff(soon > 0, \"info\", \"good\"),\n                       iff(stale_src > 0, \"warn\", \"good\")),\n         message = case(order == 1, iff(open_u > 0, strcat(open_u, \" Azure incident(s) still open\"), \"No Azure incidents are open right now\"),\n                        order == 2, iff(down_now > 0, strcat(down_now, \" resource(s) unavailable right now\"), \"All tracked resources are available\"),\n                        order == 3, iff(recent > 0, strcat(recent, \" unplanned event(s) in the last 7 days\"), \"No unplanned events in the last 7 days\"),\n                        order == 4, iff(soon > 0, strcat(soon, \" planned maintenance notice(s) in the next 14 days\"), \"No planned maintenance in the next 14 days\"),\n                        iff(stale_src > 0, strcat(stale_src, \" data source(s) have not reported in 36 hours\"), \"All data sources are reporting\")),\n         detail = case(order == 1, iff(open_u > 0, \"Click to see the longest events (Timeline tab)\", \"Nothing to do\"),\n                       order == 2, iff(down_now > 0, \"Click to see which resources (Resources tab)\", \"Nothing to do\"),\n                       order == 3, iff(recent > 0, \"Click to see the details (Timeline tab)\", \"Nothing to do\"),\n                       order == 4, iff(soon > 0, \"Click to see dates and services (Planned maintenance tab)\", \"Nothing to do\"),\n                       iff(stale_src > 0, \"Numbers may be out of date. Click to open the Data health tab\", \"Numbers are up to date\")),\n         go = case(order == 1, \"timeline\", order == 2, \"resources\", order == 3, \"timeline\", order == 4, \"planned\", \"health\");\natt\n| order by order asc\n| project status, message, detail, go\n",
        "size": 3,
        "title": "✅ What needs your attention right now",
        "noDataMessage": "No status information yet. See the Data health tab.",
@@ -423,6 +505,10 @@
          {
           "columnMatch": "detail",
           "formatter": 1
+         },
+         {
+          "columnMatch": "go",
+          "formatter": 5
          }
         ],
         "filter": false,
@@ -441,7 +527,10 @@
          }
         ]
        },
-       "showExportToExcel": true
+       "showExportToExcel": true,
+       "exportFieldName": "go",
+       "exportParameterName": "tab",
+       "exportDefaultValue": "overview"
       },
       "name": "ov-attention"
      },
@@ -449,9 +538,9 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet ev = es | summarize exposure_h = max(exposure_h), is_open = max(toint(is_open)) by tracking_id, class;\nlet unplanned = toscalar(ev | where class == \"Unplanned\" | summarize dcount(tracking_id));\nlet planned = toscalar(ev | where class == \"Planned\" | summarize dcount(tracking_id));\nlet exposure = toscalar(ev | where class == \"Unplanned\" | summarize round(sum(exposure_h), 1));\nlet open_n = toscalar(ev | where is_open == 1 and class in (\"Planned\", \"Unplanned\") | summarize dcount(tracking_id));\nlet down_min = toscalar(iv | where state =~ \"Unavailable\" and not(stale_open) | summarize round(coalesce(sum(minutes), 0.0), 1));\nlet av = toscalar(avail | summarize d = sum(downtime_min), r = sum(resources) | project a = iff(r > 0, round((1.0 - d / (r * win_days * 1440.0)) * 100.0, 3), real(null)));\nlet trend_u = toscalar(es | where class == \"Unplanned\" | make-series n = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d | project n);\nlet trend_p = toscalar(es | where class == \"Planned\" | make-series n = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d | project n);\nlet trend_d = toscalar(iv | where state =~ \"Unavailable\" and not(stale_open) | make-series n = sum(minutes) default = 0.0 on start_utc from {TimeRange:start} to {TimeRange:end} step 7d | project n);\nlet trend_x = toscalar(es | where class == \"Unplanned\" | summarize h = max(exposure_h), s = min(impact_start_utc) by tracking_id\n    | make-series n = sum(h) default = 0.0 on s from {TimeRange:start} to {TimeRange:end} step 7d | project n);\ndatatable(order: int)[1, 2, 3, 4, 5, 6]\n| extend metric = case(order == 1, \"Unplanned events\", order == 2, \"Planned maintenance\", order == 3, \"Observed downtime (minutes)\",\n                       order == 4, \"Observed availability (%)\", order == 5, \"Open right now\", \"Event time open (hours)\"),\n         value = case(order == 1, todouble(unplanned), order == 2, todouble(planned), order == 3, todouble(down_min),\n                      order == 4, todouble(av), order == 5, todouble(open_n), todouble(exposure)),\n         subtitle = case(order == 1, \"Azure incidents nobody scheduled\",\n                         order == 2, \"Maintenance Azure announced in advance\",\n                         order == 3, \"Minutes your resources were reported Unavailable\",\n                         order == 4, iff(isnull(av), \"No resource inventory yet\", \"Share of time your resources were up\"),\n                         order == 5, \"Incidents and maintenance not yet resolved\",\n                         \"How long events were open (not downtime)\"),\n         status = case(order == 1, iff(unplanned == 0, \"good\", \"warn\"),\n                       order == 2, \"info\",\n                       order == 3, iff(down_min == 0, \"good\", \"warn\"),\n                       order == 4, iff(isnull(av), \"info\", iff(av >= 99.9, \"good\", iff(av >= 99.0, \"warn\", \"bad\"))),\n                       order == 5, iff(open_n == 0, \"good\", \"warn\"),\n                       \"info\"),\n         trend = case(order == 1, trend_u, order == 2, trend_p, order == 3, trend_d, order == 6, trend_x, dynamic(null))\n| project order, metric, value, subtitle, status, trend\n| order by order asc\n",
+       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet ev = es | summarize exposure_h = max(exposure_h), is_open = max(toint(is_open)) by tracking_id, class;\nlet unplanned = toscalar(ev | where class == \"Unplanned\" | summarize dcount(tracking_id));\nlet planned = toscalar(ev | where class == \"Planned\" | summarize dcount(tracking_id));\nlet exposure = toscalar(ev | where class == \"Unplanned\" | summarize round(sum(exposure_h), 1));\nlet open_n = toscalar(ev | where is_open == 1 and class in (\"Planned\", \"Unplanned\") | summarize dcount(tracking_id));\nlet down_min = toscalar(iv | where state =~ \"Unavailable\" and not(stale_open) | summarize round(coalesce(sum(minutes), 0.0), 1));\nlet av = toscalar(avail | summarize d = sum(downtime_min), r = sum(resources) | project a = iff(r > 0, round((1.0 - d / (r * win_days * 1440.0)) * 100.0, 3), real(null)));\nlet trend_u = toscalar(es | where class == \"Unplanned\" | make-series n = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d | project n);\nlet trend_p = toscalar(es | where class == \"Planned\" | make-series n = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d | project n);\nlet trend_d = toscalar(iv | where state =~ \"Unavailable\" and not(stale_open) | make-series n = sum(minutes) default = 0.0 on start_utc from {TimeRange:start} to {TimeRange:end} step 7d | project n);\nlet trend_x = toscalar(es | where class == \"Unplanned\" | summarize h = max(exposure_h), s = min(impact_start_utc) by tracking_id\n    | make-series n = sum(h) default = 0.0 on s from {TimeRange:start} to {TimeRange:end} step 7d | project n);\ndatatable(order: int)[1, 2, 3, 4, 5, 6]\n| extend metric = case(order == 1, \"Unplanned events\", order == 2, \"Planned maintenance\", order == 3, \"Observed downtime (minutes)\",\n                       order == 4, \"Observed availability (%)\", order == 5, \"Open right now\", \"Event time open (hours)\"),\n         value = case(order == 1, todouble(unplanned), order == 2, todouble(planned), order == 3, todouble(down_min),\n                      order == 4, todouble(av), order == 5, todouble(open_n), todouble(exposure)),\n         subtitle = case(order == 1, \"Azure incidents nobody scheduled\",\n                         order == 2, \"Maintenance Azure announced in advance\",\n                         order == 3, \"Minutes your resources were reported Unavailable\",\n                         order == 4, iff(isnull(av), \"No resource inventory yet\", \"Share of time your resources were up\"),\n                         order == 5, \"Incidents and maintenance not yet resolved\",\n                         \"How long events were open (not downtime)\"),\n         status = case(order == 1, iff(unplanned == 0, \"good\", \"warn\"),\n                       order == 2, \"info\",\n                       order == 3, iff(down_min == 0, \"good\", \"warn\"),\n                       order == 4, iff(isnull(av), \"info\", iff(av >= 99.9, \"good\", iff(av >= 99.0, \"warn\", \"bad\"))),\n                       order == 5, iff(open_n == 0, \"good\", \"warn\"),\n                       \"info\"),\n         trend = case(order == 1, trend_u, order == 2, trend_p, order == 3, trend_d, order == 6, trend_x, dynamic(null)),\n         go = case(order == 1, \"timeline\", order == 2, \"planned\", order == 3, \"resources\", order == 4, \"services\", \"timeline\")\n| project order, metric, value, subtitle, status, trend, go\n| order by order asc\n",
        "size": 3,
-       "title": "📊 At a glance",
+       "title": "📊 The numbers (click a tile for the details)",
        "noDataMessage": "No events in the ledger yet. See the Data health tab.",
        "noDataMessageStyle": 4,
        "timeContext": {
@@ -528,7 +617,10 @@
           "palette": "blue"
          }
         }
-       }
+       },
+       "exportFieldName": "go",
+       "exportParameterName": "tab",
+       "exportDefaultValue": "overview"
       },
       "name": "ov-tiles"
      },
@@ -536,7 +628,50 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by class\n| order by class asc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by month = startofmonth(impact_start_utc), class\n| order by month asc\n",
+       "size": 1,
+       "title": "📅 Events per month",
+       "noDataMessage": "No events for the current filters.",
+       "noDataMessageStyle": 4,
+       "timeContext": {
+        "durationMs": 94608000000
+       },
+       "queryType": 0,
+       "resourceType": "microsoft.operationalinsights/workspaces",
+       "crossComponentResources": [
+        "__WORKSPACE_ID__"
+       ],
+       "visualization": "columnchart",
+       "chartSettings": {
+        "xAxis": "month",
+        "yAxis": [
+         "events"
+        ],
+        "showLegend": true,
+        "group": "class",
+        "createOtherGroup": null,
+        "seriesLabelSettings": [
+         {
+          "seriesName": "Unplanned",
+          "label": "Unplanned",
+          "color": "orange"
+         },
+         {
+          "seriesName": "Planned",
+          "label": "Planned",
+          "color": "blue"
+         }
+        ]
+       }
+      },
+      "name": "ov-trend",
+      "customWidth": "60"
+     },
+     {
+      "type": 3,
+      "content": {
+       "version": "KqlItem/1.0",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by class\n| order by class asc\n",
        "size": 1,
        "title": "Planned vs unplanned events",
        "noDataMessage": "No events for the current filters.",
@@ -566,15 +701,15 @@
        }
       },
       "name": "ov-split",
-      "customWidth": "35"
+      "customWidth": "40"
      },
      {
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by category, class\n| order by category asc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by category, class\n| order by category asc\n",
        "size": 1,
-       "title": "Events by category",
+       "title": "Events by service type",
        "noDataMessage": "No events for the current filters.",
        "noDataMessageStyle": 4,
        "timeContext": {
@@ -609,13 +744,13 @@
        }
       },
       "name": "ov-category",
-      "customWidth": "65"
+      "customWidth": "40"
      },
      {
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet top_services = es | where class in (\"Planned\", \"Unplanned\") | summarize total = dcount(tracking_id) by service | top 10 by total desc | project service;\nes\n| where class in (\"Planned\", \"Unplanned\") and service in (top_services)\n| summarize events = dcount(tracking_id) by service, class\n| order by service asc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet top_services = es | where class in (\"Planned\", \"Unplanned\") | summarize total = dcount(tracking_id) by service | top 10 by total desc | project service;\nes\n| where class in (\"Planned\", \"Unplanned\") and service in (top_services)\n| summarize events = dcount(tracking_id) by service, class\n| order by service asc\n",
        "size": 1,
        "title": "Top 10 services by number of events",
        "noDataMessage": "No events for the current filters.",
@@ -651,7 +786,184 @@
         ]
        }
       },
-      "name": "ov-services"
+      "name": "ov-services",
+      "customWidth": "60"
+     },
+     {
+      "type": 3,
+      "content": {
+       "version": "KqlItem/1.0",
+       "query": "AzMaintenance_Planned({IncludeSynthetic})\n| where upcoming and ('*' in ({Subscriptions}) or subscription_id in ({Subscriptions}))\n| summarize arg_min(window_start_utc, *) by tracking_id\n| project days_until = round(todouble(datetime_diff(\"hour\", window_start_utc, now())) / 24.0, 1), event_title,\n          services = strcat_array(services, \", \"), window_start_utc, go = \"planned\"\n| order by window_start_utc asc\n| take 5\n",
+       "size": 3,
+       "title": "⏭️ Coming up: the next planned maintenance (click a row for all of it)",
+       "noDataMessage": "✅ No upcoming planned maintenance.",
+       "noDataMessageStyle": 4,
+       "timeContext": {
+        "durationMs": 94608000000
+       },
+       "queryType": 0,
+       "resourceType": "microsoft.operationalinsights/workspaces",
+       "crossComponentResources": [
+        "__WORKSPACE_ID__"
+       ],
+       "visualization": "table",
+       "gridSettings": {
+        "formatters": [
+         {
+          "columnMatch": "days_until",
+          "formatter": 18,
+          "formatOptions": {
+           "thresholdsOptions": "colors",
+           "thresholdsGrid": [
+            {
+             "operator": "<=",
+             "thresholdValue": "3",
+             "representation": "redBright",
+             "text": "{0}{1}"
+            },
+            {
+             "operator": "<=",
+             "thresholdValue": "7",
+             "representation": "orange",
+             "text": "{0}{1}"
+            },
+            {
+             "operator": "Default",
+             "thresholdValue": null,
+             "representation": "blue",
+             "text": "{0}{1}"
+            }
+           ]
+          }
+         },
+         {
+          "columnMatch": "window_start_utc",
+          "formatter": 6,
+          "dateFormat": {
+           "showUtcTime": true,
+           "formatName": "shortDateTimeNoMsPattern"
+          }
+         },
+         {
+          "columnMatch": "go",
+          "formatter": 5
+         }
+        ],
+        "filter": false,
+        "labelSettings": [
+         {
+          "columnId": "days_until",
+          "label": "Starts in (days)"
+         },
+         {
+          "columnId": "event_title",
+          "label": "Maintenance"
+         },
+         {
+          "columnId": "services",
+          "label": "Services"
+         },
+         {
+          "columnId": "window_start_utc",
+          "label": "Window start (UTC)"
+         }
+        ]
+       },
+       "showExportToExcel": true,
+       "exportFieldName": "go",
+       "exportParameterName": "tab",
+       "exportDefaultValue": "overview"
+      },
+      "name": "ov-upcoming"
+     },
+     {
+      "type": 1,
+      "content": {
+       "json": "### 🔎 Go deeper"
+      },
+      "name": "ov-go"
+     },
+     {
+      "type": 11,
+      "content": {
+       "version": "LinkItem/1.0",
+       "style": "toolbar",
+       "links": [
+        {
+         "id": "141e662b-fe77-5a04-b585-cdcb10dd5a7e",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "📈 Timeline",
+         "subTarget": "timeline",
+         "style": "secondary"
+        },
+        {
+         "id": "0fac0107-a25a-55b6-8ad3-ecf3df7012ca",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "🧩 Services",
+         "subTarget": "services",
+         "style": "secondary"
+        },
+        {
+         "id": "47dd4dd8-db02-5bda-895f-2ed885f429d5",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "🌍 Regions",
+         "subTarget": "regions",
+         "style": "secondary"
+        },
+        {
+         "id": "e0380d0c-e81b-5362-bfd9-dc043ff0c3d3",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "🖥️ Resources",
+         "subTarget": "resources",
+         "style": "secondary"
+        },
+        {
+         "id": "f0ba15f9-ae1d-5669-9ac0-7517930e02aa",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "🛠️ Planned maintenance",
+         "subTarget": "planned",
+         "style": "secondary"
+        },
+        {
+         "id": "674f4ed0-2860-5913-b1ae-00f12b25784e",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "📰 Public PIRs",
+         "subTarget": "pir",
+         "style": "secondary"
+        },
+        {
+         "id": "410ea213-9b85-5753-880c-2c7671a4ee10",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "🔮 Expected downtime",
+         "subTarget": "planner",
+         "style": "secondary"
+        },
+        {
+         "id": "e9c52690-e528-586c-8647-bedded4fd6e3",
+         "cellValue": "tab",
+         "linkTarget": "parameter",
+         "linkLabel": "❤️ Data health",
+         "subTarget": "health",
+         "style": "secondary"
+        }
+       ]
+      },
+      "name": "ov-nav"
+     },
+     {
+      "type": 1,
+      "content": {
+       "json": "**What this page shows**\n\nA one-page summary for a quick review. Everything here can be opened in more detail on the other tabs.\n\n**How to read it**\n\n- **Unplanned events** are Azure incidents nobody scheduled. **Planned maintenance** is work Azure announced in advance.\n- **Observed downtime** is the number of minutes your resources were reported *Unavailable*. It is not the same as how long an event was open (**event time open**).\n- **Observed availability** is the share of time your resources were up.\n- Each event is counted once, even if it affected several services or regions. The small line under a number is its weekly trend.",
+       "style": "info"
+      },
+      "name": "ov-desc"
      }
     ],
     "expandable": false
@@ -682,7 +994,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by month = startofmonth(impact_start_utc), class\n| order by month asc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize events = dcount(tracking_id) by month = startofmonth(impact_start_utc), class\n| order by month asc\n",
        "size": 1,
        "title": "📅 Events per month",
        "noDataMessage": "No events in the selected range.",
@@ -724,7 +1036,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\niv\n| where state =~ \"Unavailable\" and not(stale_open)\n| summarize downtime_min = round(sum(minutes), 1) by month = startofmonth(start_utc), class\n| order by month asc\n",
+       "query": "let iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\niv\n| where state =~ \"Unavailable\" and not(stale_open)\n| summarize downtime_min = round(sum(minutes), 1) by month = startofmonth(start_utc), class\n| order by month asc\n",
        "size": 1,
        "title": "⏱️ Minutes your resources were unavailable, per month",
        "noDataMessage": "🎉 No Resource Health downtime recorded in the selected range.",
@@ -773,7 +1085,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet days = es\n    | where class == \"Unplanned\"\n    | summarize n = dcount(tracking_id) by day = startofday(impact_start_utc)\n    | extend week = startofweek(day), dow = toint(dayofweek(day) / 1d)\n    | summarize Sun = sumif(n, dow == 0), Mon = sumif(n, dow == 1), Tue = sumif(n, dow == 2), Wed = sumif(n, dow == 3),\n                Thu = sumif(n, dow == 4), Fri = sumif(n, dow == 5), Sat = sumif(n, dow == 6) by week;\nrange week from startofweek({TimeRange:start}) to startofweek({TimeRange:end}) step 7d\n| join kind=leftouter days on week\n| project week, Sun = coalesce(Sun, long(0)), Mon = coalesce(Mon, long(0)), Tue = coalesce(Tue, long(0)), Wed = coalesce(Wed, long(0)),\n          Thu = coalesce(Thu, long(0)), Fri = coalesce(Fri, long(0)), Sat = coalesce(Sat, long(0))\n| order by week desc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet days = es\n    | where class == \"Unplanned\"\n    | summarize n = dcount(tracking_id) by day = startofday(impact_start_utc)\n    | extend week = startofweek(day), dow = toint(dayofweek(day) / 1d)\n    | summarize Sun = sumif(n, dow == 0), Mon = sumif(n, dow == 1), Tue = sumif(n, dow == 2), Wed = sumif(n, dow == 3),\n                Thu = sumif(n, dow == 4), Fri = sumif(n, dow == 5), Sat = sumif(n, dow == 6) by week;\nrange week from startofweek({TimeRange:start}) to startofweek({TimeRange:end}) step 7d\n| join kind=leftouter days on week\n| project week, Sun = coalesce(Sun, long(0)), Mon = coalesce(Mon, long(0)), Tue = coalesce(Tue, long(0)), Wed = coalesce(Wed, long(0)),\n          Thu = coalesce(Thu, long(0)), Fri = coalesce(Fri, long(0)), Sat = coalesce(Sat, long(0))\n| order by week desc\n",
        "size": 3,
        "title": "🟧 Unplanned events by day",
        "noDataMessage": "No events in the selected range.",
@@ -831,7 +1143,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet days = es\n    | where class == \"Planned\"\n    | summarize n = dcount(tracking_id) by day = startofday(impact_start_utc)\n    | extend week = startofweek(day), dow = toint(dayofweek(day) / 1d)\n    | summarize Sun = sumif(n, dow == 0), Mon = sumif(n, dow == 1), Tue = sumif(n, dow == 2), Wed = sumif(n, dow == 3),\n                Thu = sumif(n, dow == 4), Fri = sumif(n, dow == 5), Sat = sumif(n, dow == 6) by week;\nrange week from startofweek({TimeRange:start}) to startofweek({TimeRange:end}) step 7d\n| join kind=leftouter days on week\n| project week, Sun = coalesce(Sun, long(0)), Mon = coalesce(Mon, long(0)), Tue = coalesce(Tue, long(0)), Wed = coalesce(Wed, long(0)),\n          Thu = coalesce(Thu, long(0)), Fri = coalesce(Fri, long(0)), Sat = coalesce(Sat, long(0))\n| order by week desc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet days = es\n    | where class == \"Planned\"\n    | summarize n = dcount(tracking_id) by day = startofday(impact_start_utc)\n    | extend week = startofweek(day), dow = toint(dayofweek(day) / 1d)\n    | summarize Sun = sumif(n, dow == 0), Mon = sumif(n, dow == 1), Tue = sumif(n, dow == 2), Wed = sumif(n, dow == 3),\n                Thu = sumif(n, dow == 4), Fri = sumif(n, dow == 5), Sat = sumif(n, dow == 6) by week;\nrange week from startofweek({TimeRange:start}) to startofweek({TimeRange:end}) step 7d\n| join kind=leftouter days on week\n| project week, Sun = coalesce(Sun, long(0)), Mon = coalesce(Mon, long(0)), Tue = coalesce(Tue, long(0)), Wed = coalesce(Wed, long(0)),\n          Thu = coalesce(Thu, long(0)), Fri = coalesce(Fri, long(0)), Sat = coalesce(Sat, long(0))\n| order by week desc\n",
        "size": 3,
        "title": "🟦 Planned maintenance by day",
        "noDataMessage": "No events in the selected range.",
@@ -889,7 +1201,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), services = strcat_array(make_set(service, 3), \", \"),\n            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class\n| top 15 by exposure_h desc\n| project status = iff(is_open == 1, \"Open\", \"Resolved\"), class, event_title, services, started, exposure_h\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\")\n| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), services = strcat_array(make_set(service, 3), \", \"),\n            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class\n| top 15 by exposure_h desc\n| project status = iff(is_open == 1, \"Open\", \"Resolved\"), class, event_title, services, started, exposure_h\n",
        "size": 3,
        "title": "🐢 Longest events in the range",
        "noDataMessage": "No events in the selected range.",
@@ -1045,7 +1357,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\navail\n| where downtime_min > 0\n| top 10 by downtime_min desc\n| project service_name, downtime_min\n",
+       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\navail\n| where downtime_min > 0\n| top 10 by downtime_min desc\n| project service_name, downtime_min\n",
        "size": 1,
        "title": "⏱️ Services with the most unavailable minutes",
        "noDataMessage": "🎉 No downtime recorded for these services in the selected range.",
@@ -1080,7 +1392,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet per = es\n    | where class in (\"Planned\", \"Unplanned\")\n    | summarize events = dcount(tracking_id) by service, category;\nlet mx = toscalar(per | summarize max(events));\nper\n| project Name = service, Events = events, Intensity = iff(mx > 0, round(events * 100.0 / mx, 1), 0.0), Group = category\n| order by Events desc\n| take 60\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet per = es\n    | where class in (\"Planned\", \"Unplanned\")\n    | summarize events = dcount(tracking_id) by service, category;\nlet mx = toscalar(per | summarize max(events));\nper\n| project Name = service, Events = events, Intensity = iff(mx > 0, round(events * 100.0 / mx, 1), 0.0), Group = category\n| order by Events desc\n| take 60\n",
        "size": 0,
        "title": "🐝 Service heat map (one hexagon per service, grouped by type; redder = more events)",
        "noDataMessage": "No service data for the current filters.",
@@ -1145,7 +1457,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet trend_by_service = es | where class in (\"Planned\", \"Unplanned\")\n    | make-series trend = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d by service;\nlet per_event = es | where class in (\"Planned\", \"Unplanned\") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, service, category;\nper_event\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\"),\n            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by service, category\n| join kind=leftouter (trend_by_service | project service, trend) on service\n| project-away service1\n| join kind=fullouter (avail | project service = service_name, category, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate) on service\n| project category = coalesce(category, category1), service = coalesce(service, service1), trend, events = coalesce(events, 0), unplanned = coalesce(unplanned, 0),\n          planned = coalesce(planned, 0), exposure_p50_h, exposure_p90_h, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate\n| order by category asc, events desc\n",
+       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet trend_by_service = es | where class in (\"Planned\", \"Unplanned\")\n    | make-series trend = dcount(tracking_id) default = 0 on impact_start_utc from {TimeRange:start} to {TimeRange:end} step 7d by service;\nlet per_event = es | where class in (\"Planned\", \"Unplanned\") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, service, category;\nper_event\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\"),\n            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by service, category\n| join kind=leftouter (trend_by_service | project service, trend) on service\n| project-away service1\n| join kind=fullouter (avail | project service = service_name, category, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate) on service\n| project category = coalesce(category, category1), service = coalesce(service, service1), trend, events = coalesce(events, 0), unplanned = coalesce(unplanned, 0),\n          planned = coalesce(planned, 0), exposure_p50_h, exposure_p90_h, resources, downtime_min, availability_pct, sla_percent, sla_status, approximate\n| order by category asc, events desc\n",
        "size": 3,
        "title": "🧩 Service scorecard",
        "noDataMessage": "No service data for the current filters.",
@@ -1382,7 +1694,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\") and service == '{SelectedService}'\n| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), regions = strcat_array(make_set(region, 3), \", \"),\n            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class\n| project status = iff(is_open == 1, \"Open\", \"Resolved\"), class, event_title, regions, started, exposure_h, tracking_id\n| order by started desc\n| take 200\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\") and service == '{SelectedService}'\n| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), regions = strcat_array(make_set(region, 3), \", \"),\n            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class\n| project status = iff(is_open == 1, \"Open\", \"Resolved\"), class, event_title, regions, started, exposure_h, tracking_id\n| order by started desc\n| take 200\n",
        "size": 3,
        "title": "🔎 Events of the selected service",
        "noDataMessage": "No events for this service in the selected range.",
@@ -1547,7 +1859,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet per_event = es | where class in (\"Planned\", \"Unplanned\") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, region;\nper_event\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\"),\n            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by region\n| order by events desc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet per_event = es | where class in (\"Planned\", \"Unplanned\") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, region;\nper_event\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\"),\n            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by region\n| order by events desc\n",
        "size": 1,
        "title": "🗺️ Events by region",
        "noDataMessage": "No regional data for the current filters.",
@@ -1583,7 +1895,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\") and region !in (\"(unknown)\", \"Global\")\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\") by region\n| top 10 by events desc\n| project region, unplanned, planned\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\") and region !in (\"(unknown)\", \"Global\")\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\") by region\n| top 10 by events desc\n| project region, unplanned, planned\n",
        "size": 1,
        "title": "Top regions by number of events",
        "noDataMessage": "No regional data for the current filters.",
@@ -1625,7 +1937,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nlet per_event = es | where class in (\"Planned\", \"Unplanned\") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, region;\nper_event\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\"),\n            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by region\n| order by events desc\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet per_event = es | where class in (\"Planned\", \"Unplanned\") | summarize exposure_h = max(exposure_h), class = take_any(class) by tracking_id, region;\nper_event\n| summarize events = dcount(tracking_id), unplanned = dcountif(tracking_id, class == \"Unplanned\"), planned = dcountif(tracking_id, class == \"Planned\"),\n            exposure_p50_h = round(percentile(exposure_h, 50), 1), exposure_p90_h = round(percentile(exposure_h, 90), 1) by region\n| order by events desc\n",
        "size": 3,
        "title": "🌍 All regions",
        "noDataMessage": "No regional data for the current filters.",
@@ -1753,7 +2065,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\nes\n| where class in (\"Planned\", \"Unplanned\") and region == '{SelectedRegion}'\n| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), services = strcat_array(make_set(service, 3), \", \"),\n            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class\n| project status = iff(is_open == 1, \"Open\", \"Resolved\"), class, event_title, services, started, exposure_h, tracking_id\n| order by started desc\n| take 200\n",
+       "query": "let es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nes\n| where class in (\"Planned\", \"Unplanned\") and region == '{SelectedRegion}'\n| summarize exposure_h = max(exposure_h), started = min(impact_start_utc), services = strcat_array(make_set(service, 3), \", \"),\n            is_open = max(toint(is_open)), event_title = take_any(event_title) by tracking_id, class\n| project status = iff(is_open == 1, \"Open\", \"Resolved\"), class, event_title, services, started, exposure_h, tracking_id\n| order by started desc\n| take 200\n",
        "size": 3,
        "title": "🔎 Events of the selected region",
        "noDataMessage": "No events for this region in the selected range.",
@@ -1918,7 +2230,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\niv\n| where state =~ \"Unavailable\" and not(stale_open)\n| summarize intervals = count(), downtime_min = round(sum(minutes), 1) by resource_id, service_name\n| top 10 by downtime_min desc\n| project resource = tostring(split(resource_id, \"/\")[-1]), service_name, intervals, downtime_min\n",
+       "query": "let iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\niv\n| where state =~ \"Unavailable\" and not(stale_open)\n| summarize intervals = count(), downtime_min = round(sum(minutes), 1) by resource_id, service_name\n| top 10 by downtime_min desc\n| project resource = tostring(split(resource_id, \"/\")[-1]), service_name, intervals, downtime_min\n",
        "size": 1,
        "title": "🔥 Resources with the most unavailable minutes",
        "noDataMessage": "🎉 No Resource Health downtime recorded in the selected range.",
@@ -1953,7 +2265,7 @@
       "type": 3,
       "content": {
        "version": "KqlItem/1.0",
-       "query": "let win_days = toint(datetime_diff(\"day\", {TimeRange:end}, {TimeRange:start}));\nlet es = AzMaintenance_EventServices({IncludeSynthetic})\n    | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service in ({Service})\n    | where '*' in ({Region}) or region in ({Region});\nlet avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service});\nlet iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\niv\n| extend status = case(stale_open, \"Stale (not counted)\", is_open, \"Ongoing\", \"Recovered\"),\n         resource = tostring(split(resource_id, \"/\")[-1])\n| project status, resource, service_name, state, class, start_utc, end_utc = iff(is_open, datetime(null), end_utc), minutes, cause, classification_basis\n| order by start_utc desc\n| take 500\n",
+       "query": "let iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})\n    | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})\n    | where '*' in ({Category}) or category in ({Category})\n    | where '*' in ({Service}) or service_name in ({Service})\n    | where end_utc > {TimeRange:start} and start_utc < {TimeRange:end}\n    | where {IncludeUserInitiated} or not(user_initiated);\niv\n| extend status = case(stale_open, \"Stale (not counted)\", is_open, \"Ongoing\", \"Recovered\"),\n         resource = tostring(split(resource_id, \"/\")[-1])\n| project status, resource, service_name, state, class, start_utc, end_utc = iff(is_open, datetime(null), end_utc), minutes, cause, classification_basis\n| order by start_utc desc\n| take 500\n",
        "size": 3,
        "title": "🧾 Downtime periods",
        "noDataMessage": "No downtime periods in the selected range.",

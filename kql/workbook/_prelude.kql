@@ -1,15 +1,20 @@
 // Shared prelude for workbook queries ("//#include _prelude"). Workbook tokens such as {TimeRange:start} are substituted by the workbook
 // at render time and by tools/run_kql_checks.py when testing. '*' means "All" for the multi-select filters.
+// tools/wbkql.py includes only the parts a query references (win_days, es, avail, iv) to keep the workbook small.
+//#part win_days
 let win_days = toint(datetime_diff("day", {TimeRange:end}, {TimeRange:start}));
+//#part es
 let es = AzMaintenance_EventServices({IncludeSynthetic})
     | where impact_start_utc between ({TimeRange:start} .. {TimeRange:end})
     | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
     | where '*' in ({Category}) or category in ({Category})
     | where '*' in ({Service}) or service in ({Service})
     | where '*' in ({Region}) or region in ({Region});
+//#part avail
 let avail = AzMaintenance_Availability(win_days, {IncludeUserInitiated}, {IncludeSynthetic})
     | where '*' in ({Category}) or category in ({Category})
     | where '*' in ({Service}) or service_name in ({Service});
+//#part iv
 let iv = AzMaintenance_ResourceIntervals({IncludeSynthetic})
     | where '*' in ({Subscriptions}) or subscription_id in ({Subscriptions})
     | where '*' in ({Category}) or category in ({Category})

@@ -1,26 +1,6 @@
-// purpose: "What needs your attention" checklist for the Overview page: plain-language status lines.
-// outputs: order, status (good|warn|bad|info), message, detail
-//#include _prelude
-let open_u = toscalar(es | where is_open and class == "Unplanned" | summarize dcount(tracking_id));
-let down_now = toscalar(iv | where state =~ "Unavailable" and is_open and not(stale_open) | summarize dcount(resource_id));
-let recent = toscalar(es | where class == "Unplanned" and impact_start_utc > ago(7d) | summarize dcount(tracking_id));
-let soon = toscalar(AzMaintenance_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));
-let stale_src = toscalar(AzMaintenance_DataHealth({IncludeSynthetic}) | where section == "ingest" and status == "STALE" | summarize count());
-datatable(order: int)[1, 2, 3, 4, 5]
-| extend status = case(order == 1, iff(open_u > 0, "bad", "good"),
-                       order == 2, iff(down_now > 0, "bad", "good"),
-                       order == 3, iff(recent > 0, "warn", "good"),
-                       order == 4, iff(soon > 0, "info", "good"),
-                       iff(stale_src > 0, "warn", "good")),
-         message = case(order == 1, iff(open_u > 0, strcat(open_u, " Azure incident(s) still open"), "No Azure incidents are open right now"),
-                        order == 2, iff(down_now > 0, strcat(down_now, " resource(s) unavailable right now"), "All tracked resources are available"),
-                        order == 3, iff(recent > 0, strcat(recent, " unplanned event(s) in the last 7 days"), "No unplanned events in the last 7 days"),
-                        order == 4, iff(soon > 0, strcat(soon, " planned maintenance notice(s) in the next 14 days"), "No planned maintenance in the next 14 days"),
-                        iff(stale_src > 0, strcat(stale_src, " data source(s) have not reported in 36 hours"), "All data sources are reporting")),
-         detail = case(order == 1, iff(open_u > 0, "See the longest events on the Timeline tab", "Nothing to do"),
-                       order == 2, iff(down_now > 0, "See the Resources tab for which ones", "Nothing to do"),
-                       order == 3, iff(recent > 0, "See the Timeline tab for details", "Nothing to do"),
-                       order == 4, iff(soon > 0, "See the Planned maintenance tab for dates and services", "Nothing to do"),
-                       iff(stale_src > 0, "Numbers may be out of date: see the Data health tab", "Numbers are up to date"))
-| project order, status, message, detail
+// purpose: "What needs your attention" checklist for the Overview page: plain-language status lines. Clicking a row opens the tab with the details.
+// outputs: status (good|warn|bad|info), message, detail, go
+//#include _attention
+att
 | order by order asc
+| project status, message, detail, go

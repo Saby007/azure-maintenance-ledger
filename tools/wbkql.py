@@ -10,6 +10,35 @@ from pathlib import Path
 
 WB_DIR = Path(__file__).resolve().parents[1] / "kql" / "workbook"
 _INCLUDE = re.compile(r"^\s*//#include\s+(\S+)\s*$")
+_PART = re.compile(r"^\s*//#part\s+(\w+)\s*$")
+_PRELUDE_MARK = "__PRELUDE__"
+
+
+def _prelude_parts() -> dict[str, str]:
+    parts: dict[str, list[str]] = {}
+    current: list[str] | None = None
+    for line in (WB_DIR / "_prelude.kql").read_text(encoding="utf-8").splitlines():
+        m = _PART.match(line)
+        if m:
+            current = parts.setdefault(m.group(1), [])
+        elif current is not None and not line.lstrip().startswith("//"):
+            current.append(line)
+    return {k: "\n".join(v) for k, v in parts.items()}
+
+
+def _prelude_for(rest: str) -> str:
+    """Only the prelude parts the query references (directly or through another part), in file order."""
+    parts = _prelude_parts()
+    chosen: set[str] = set()
+    changed = True
+    while changed:
+        changed = False
+        haystack = rest + "\n".join(parts[p] for p in chosen)
+        for name in parts:
+            if name not in chosen and re.search(rf"\b{name}\b", haystack):
+                chosen.add(name)
+                changed = True
+    return "\n".join(parts[p] for p in parts if p in chosen)
 
 
 def _body(name: str) -> list[str]:
@@ -17,7 +46,9 @@ def _body(name: str) -> list[str]:
     out: list[str] = []
     for line in text.splitlines():
         m = _INCLUDE.match(line)
-        if m:
+        if m and m.group(1) == "_prelude":
+            out.append(_PRELUDE_MARK)
+        elif m:
             out.extend(_body(m.group(1)))
         elif not line.lstrip().startswith("//"):
             out.append(line)
@@ -25,7 +56,12 @@ def _body(name: str) -> list[str]:
 
 
 def load(name: str) -> str:
-    return "\n".join(_body(name)).strip() + "\n"
+    lines = _body(name)
+    if _PRELUDE_MARK in lines:
+        prelude = _prelude_for("\n".join(ln for ln in lines if ln != _PRELUDE_MARK))
+        first = lines.index(_PRELUDE_MARK)
+        lines = [prelude if i == first else ln for i, ln in enumerate(lines) if i == first or ln != _PRELUDE_MARK]
+    return "\n".join(lines).strip() + "\n"
 
 
 def all_names() -> list[str]:

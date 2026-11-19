@@ -1,0 +1,12 @@
+// purpose: the one-line verdict at the top of the Overview: overall status and how many checklist lines need attention.
+// outputs: metric, value, subtitle, status, go
+//#include _attention
+att
+| summarize bad = countif(status == "bad"), warn = countif(status == "warn")
+| project metric = case(bad > 0, "Action needed", warn > 0, "Worth a look", "All clear"),
+          value = todouble(bad + warn),
+          subtitle = case(bad > 0, "Something is unavailable or still open right now. See the checklist below.",
+                          warn > 0, "No outright problems, but some points need a look. See the checklist below.",
+                          "Nothing needs your attention right now."),
+          status = case(bad > 0, "bad", warn > 0, "warn", "good"),
+          go = "timeline"

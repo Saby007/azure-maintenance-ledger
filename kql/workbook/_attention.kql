@@ -1,0 +1,25 @@
+// Shared by 01_attention and 01_verdict ("//#include _attention"): defines `att`, one row per checklist line.
+// Columns: order, status (good|warn|bad|info), message, detail, go (the workbook tab that has the details).
+//#include _prelude
+let open_u = toscalar(es | where is_open and class == "Unplanned" | summarize dcount(tracking_id));
+let down_now = toscalar(iv | where state =~ "Unavailable" and is_open and not(stale_open) | summarize dcount(resource_id));
+let recent = toscalar(es | where class == "Unplanned" and impact_start_utc > ago(7d) | summarize dcount(tracking_id));
+let soon = toscalar(AzMaintenance_Planned({IncludeSynthetic}) | where upcoming and window_start_utc < now() + 14d | summarize dcount(tracking_id));
+let stale_src = toscalar(AzMaintenance_DataHealth({IncludeSynthetic}) | where section == "ingest" and status == "STALE" | summarize count());
+let att = datatable(order: int)[1, 2, 3, 4, 5]
+| extend status = case(order == 1, iff(open_u > 0, "bad", "good"),
+                       order == 2, iff(down_now > 0, "bad", "good"),
+                       order == 3, iff(recent > 0, "warn", "good"),
+                       order == 4, iff(soon > 0, "info", "good"),
+                       iff(stale_src > 0, "warn", "good")),
+         message = case(order == 1, iff(open_u > 0, strcat(open_u, " Azure incident(s) still open"), "No Azure incidents are open right now"),
+                        order == 2, iff(down_now > 0, strcat(down_now, " resource(s) unavailable right now"), "All tracked resources are available"),
+                        order == 3, iff(recent > 0, strcat(recent, " unplanned event(s) in the last 7 days"), "No unplanned events in the last 7 days"),
+                        order == 4, iff(soon > 0, strcat(soon, " planned maintenance notice(s) in the next 14 days"), "No planned maintenance in the next 14 days"),
+                        iff(stale_src > 0, strcat(stale_src, " data source(s) have not reported in 36 hours"), "All data sources are reporting")),
+         detail = case(order == 1, iff(open_u > 0, "Click to see the longest events (Timeline tab)", "Nothing to do"),
+                       order == 2, iff(down_now > 0, "Click to see which resources (Resources tab)", "Nothing to do"),
+                       order == 3, iff(recent > 0, "Click to see the details (Timeline tab)", "Nothing to do"),
+                       order == 4, iff(soon > 0, "Click to see dates and services (Planned maintenance tab)", "Nothing to do"),
+                       iff(stale_src > 0, "Numbers may be out of date. Click to open the Data health tab", "Numbers are up to date")),
+         go = case(order == 1, "timeline", order == 2, "resources", order == 3, "timeline", order == 4, "planned", "health");

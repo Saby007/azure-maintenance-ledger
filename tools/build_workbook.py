@@ -254,7 +254,22 @@ def grid(name: str, title: str, qfile: str, formatters: list[dict], labels: dict
     return query(name, title, qfile, "table", empty, size=3, gridSettings=gs, showExportToExcel=True, **extra)
 
 
-def kpi_tiles(name: str, title: str, qfile: str, empty: str, trend: bool = False) -> dict:
+def hide(col: str) -> dict:
+    return {"columnMatch": col, "formatter": 5}
+
+
+def go_tab(**extra) -> dict:
+    """Click-through: selecting a row/tile writes its `go` column into the hidden `tab` parameter, which switches the page."""
+    return {"exportFieldName": "go", "exportParameterName": "tab", "exportDefaultValue": "overview", **extra}
+
+
+def nav_toolbar(name: str, links: list[tuple[str, str]]) -> dict:
+    items = [{"id": uid("nav", name, tab), "cellValue": "tab", "linkTarget": "parameter", "linkLabel": label, "subTarget": tab, "style": "secondary"}
+             for tab, label in links]
+    return {"type": 11, "content": {"version": "LinkItem/1.0", "style": "toolbar", "links": items}, "name": name}
+
+
+def kpi_tiles(name: str, title: str, qfile: str, empty: str, trend: bool = False, **extra) -> dict:
     ts = {
         "titleContent": {"columnMatch": "metric", "formatter": F_TEXT},
         "leftContent": {"columnMatch": "value", "formatter": F_BIGNUM, "formatOptions": {"palette": "none"},
@@ -266,7 +281,7 @@ def kpi_tiles(name: str, title: str, qfile: str, empty: str, trend: bool = False
     }
     if trend:
         ts["bottomContent"] = spark("trend", "blue")
-    return query(name, title, qfile, "tiles", empty, size=3, tileSettings=ts)
+    return query(name, title, qfile, "tiles", empty, size=3, tileSettings=ts, **extra)
 
 
 def honeycomb(name: str, title: str, qfile: str, empty: str) -> dict:
@@ -314,7 +329,7 @@ def donut(name: str, title: str, qfile: str, colors: dict[str, str], empty: str,
 def build() -> dict:
     method_md = (ROOT / "docs" / "method.md").read_text(encoding="utf-8").replace("# Method\n", "", 1).strip()
     pages: list[tuple[str, str]] = [
-        ("overview", "🏠 Overview"), ("timeline", "📈 Timeline"), ("services", "🧩 Services"), ("regions", "🌍 Regions"),
+        ("overview", "🏠 Executive summary"), ("timeline", "📈 Timeline"), ("services", "🧩 Services"), ("regions", "🌍 Regions"),
         ("resources", "🖥️ Resources"), ("planned", "🛠️ Planned maintenance"), ("pir", "📰 Public PIR benchmark"),
         ("planner", "🔮 Expected downtime"), ("health", "❤️ Data health"), ("method", "ℹ️ About, method and caveats"),
     ]
@@ -328,27 +343,38 @@ def build() -> dict:
     ]
 
     # ------------------------------------------------------------ Overview
-    items.append(group("page-overview", "Overview", [
-        describe("ov-desc",
-                 "A quick summary of the problems and maintenance Azure has reported for your subscriptions in the selected time range, "
-                 "and how much your resources were actually unavailable.",
-                 ["Start with **What needs your attention**: a short checklist. Green tick = fine, amber warning = take a look, red = act, blue info = for your information.",
-                  "**Unplanned events** are Azure incidents that nobody scheduled. **Planned maintenance** is work Azure announced in advance.",
-                  "**Event time open** (exposure) is how long events were officially open. It is *not* how long your resources were down.",
-                  "**Observed downtime** is the number of minutes your resources were reported *Unavailable*. Time you caused yourself (for example stopping a VM) is left out.",
-                  "**Observed availability** is the share of time your resources were up, from that downtime and the number of resources you have.",
-                  "Each event is counted once, even if it affected several services or regions. Use the filters at the top to narrow the view.",
-                  "The small **line under a number** is the weekly trend across the selected time range."]),
+    items.append(group("page-overview", "Executive summary", [
+        text("ov-title", "How your Azure services are doing in the selected time range. **Click any tile or checklist row to jump to the tab with the details.**"),
+        kpi_tiles("ov-verdict", "Overall status", "01_verdict", "No status information yet. See the Data health tab.", **go_tab()),
         grid("ov-attention", "✅ What needs your attention right now", "01_attention",
-             [thr("status", STATUS_ICONS, label_text=""), {"columnMatch": "message", "formatter": F_TEXT}, {"columnMatch": "detail", "formatter": F_TEXT}],
+             [thr("status", STATUS_ICONS, label_text=""), {"columnMatch": "message", "formatter": F_TEXT}, {"columnMatch": "detail", "formatter": F_TEXT},
+              hide("go")],
              labels={"status": " ", "message": "Status", "detail": "What to do"}, filterable=False,
-             empty="No status information yet. See the Data health tab."),
-        kpi_tiles("ov-tiles", "📊 At a glance", "01_overview_tiles", "No events in the ledger yet. See the Data health tab.", trend=True),
-        donut("ov-split", "Planned vs unplanned events", "01_overview_split", CLASS_COLORS, "No events for the current filters.", width="35"),
-        chart("ov-category", "Events by category", "01_overview_by_category", "barchart", "category", ["events"], group_by="class",
-              colors=CLASS_COLORS, empty="No events for the current filters.", width="65"),
+             empty="No status information yet. See the Data health tab.", **go_tab()),
+        kpi_tiles("ov-tiles", "📊 The numbers (click a tile for the details)", "01_overview_tiles",
+                  "No events in the ledger yet. See the Data health tab.", trend=True, **go_tab()),
+        chart("ov-trend", "📅 Events per month", "02_timeline_events", "columnchart", "month", ["events"], group_by="class",
+              colors=CLASS_COLORS, empty="No events for the current filters.", width="60"),
+        donut("ov-split", "Planned vs unplanned events", "01_overview_split", CLASS_COLORS, "No events for the current filters.", width="40"),
+        chart("ov-category", "Events by service type", "01_overview_by_category", "barchart", "category", ["events"], group_by="class",
+              colors=CLASS_COLORS, empty="No events for the current filters.", width="40"),
         chart("ov-services", "Top 10 services by number of events", "01_overview_top_services", "barchart", "service", ["events"], group_by="class",
-              colors=CLASS_COLORS, empty="No events for the current filters."),
+              colors=CLASS_COLORS, empty="No events for the current filters.", width="60"),
+        grid("ov-upcoming", "⏭️ Coming up: the next planned maintenance (click a row for all of it)", "01_overview_upcoming",
+             [thr("days_until", [("<=", "3", "redBright"), ("<=", "7", "orange"), ("Default", None, "blue")], mode="colors"),
+              when("window_start_utc"), hide("go")],
+             labels={"days_until": "Starts in (days)", "event_title": "Maintenance", "services": "Services", "window_start_utc": "Window start (UTC)"},
+             filterable=False, empty="✅ No upcoming planned maintenance.", **go_tab()),
+        text("ov-go", "### 🔎 Go deeper"),
+        nav_toolbar("ov-nav", [("timeline", "📈 Timeline"), ("services", "🧩 Services"), ("regions", "🌍 Regions"), ("resources", "🖥️ Resources"),
+                               ("planned", "🛠️ Planned maintenance"), ("pir", "📰 Public PIRs"), ("planner", "🔮 Expected downtime"),
+                               ("health", "❤️ Data health")]),
+        describe("ov-desc",
+                 "A one-page summary for a quick review. Everything here can be opened in more detail on the other tabs.",
+                 ["**Unplanned events** are Azure incidents nobody scheduled. **Planned maintenance** is work Azure announced in advance.",
+                  "**Observed downtime** is the number of minutes your resources were reported *Unavailable*. It is not the same as how long an event was open (**event time open**).",
+                  "**Observed availability** is the share of time your resources were up.",
+                  "Each event is counted once, even if it affected several services or regions. The small line under a number is its weekly trend."]),
     ], "overview"))
 
     # ------------------------------------------------------------ Timeline
