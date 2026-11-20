@@ -147,7 +147,7 @@
       "label": "Category",
       "type": 2,
       "isRequired": true,
-      "query": "AzMaintenance_Catalog({IncludeSynthetic})\n| summarize by category\n| project value = category, label = category\n",
+      "query": "let rows = AzMaintenance_Catalog({IncludeSynthetic})\n    | summarize by category\n    | project value = category, label = category;\nlet n = toscalar(rows | count);\nrows\n| union (print value = \"(no data yet)\", label = \"(no data yet)\" | where n == 0)\n",
       "queryType": 0,
       "resourceType": "microsoft.operationalinsights/workspaces",
       "crossComponentResources": [
