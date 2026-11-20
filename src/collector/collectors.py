@@ -61,13 +61,15 @@ def run_service_health(ing: Ingestor, client: arg.ArgClient, state: WatermarkSto
             max_update = lu
     res.rows_written += ing.upload("AzSvcHealthEvents_CL", rows)
 
+    # Impacted resources change together with their event. When no event changed (the usual hourly run) skip them, so unchanged rows are not re-ingested every hour.
     imp_rows = []
-    for rec in client.query(arg.load_query("service_health_impacted"), subs):
-        res.rows_read += 1
-        r = arg.impacted_row(rec)
-        if r:
-            imp_rows.append(r)
-    res.rows_written += ing.upload("AzSvcHealthImpacted_CL", imp_rows)  # row_key includes status: unchanged rows dedupe in KQL
+    if rows:
+        for rec in client.query(arg.load_query("service_health_impacted"), subs):
+            res.rows_read += 1
+            r = arg.impacted_row(rec)
+            if r:
+                imp_rows.append(r)
+        res.rows_written += ing.upload("AzSvcHealthImpacted_CL", imp_rows)  # row_key includes status: unchanged rows dedupe in KQL
     if max_update:
         state.set("servicehealth_events", utc_iso(max_update))
         res.watermark = max_update

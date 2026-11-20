@@ -100,11 +100,17 @@ def done_state(last):
 
 def test_steady_state_runs_only_what_is_due(wired):
     fresh = NOW - dt.timedelta(hours=2)
-    state = done_state({"servicehealth_events": fresh, "inventory": fresh, "vm_annotations": fresh, "forecast": fresh})
+    state = done_state({"servicehealth_events": NOW - dt.timedelta(minutes=30), "inventory": fresh, "vm_annotations": fresh, "forecast": fresh})
     state.set("pirs_month", "2026-11")
     res = collect(state)
     assert res["servicehealth"] == res["inventory"] == res["vm_annotations"] == res["forecast"] == res["pirs"] == "skipped"
     assert wired == ["run_reference"]
+
+
+def test_service_health_runs_on_every_hourly_run(wired):
+    state = done_state({"servicehealth_events": NOW - dt.timedelta(minutes=59), "inventory": NOW, "vm_annotations": NOW, "forecast": NOW})
+    state.set("pirs_month", "2026-11")
+    assert collect(state)["servicehealth"] == "ok"
 
 
 def test_steady_state_due_tasks_run(wired):

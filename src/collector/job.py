@@ -2,7 +2,8 @@
 
 Runs hourly. First runs bootstrap the ledger step by step (catalog, public PIRs, Service Health history, Resource Health history,
 inventory, VM annotations); a step that fails (for example a role still propagating) is simply retried at the next run. Afterwards each
-task runs when due: Service Health and inventory daily, VM annotations every 6 h, public PIRs monthly, planning ranges daily.
+task runs when due: Service Health every run (so open incidents show up within the hour), inventory daily, VM annotations every 5 h, public PIRs monthly,
+planning ranges daily.
 State is kept in the workspace (see state.LogState): no storage account is needed.
 """
 
@@ -27,6 +28,7 @@ from .state import LogState
 log = logging.getLogger("aml.job")
 
 DAILY_H = 20.0
+SERVICE_HEALTH_H = 0.9  # a bit under the hourly schedule so a run that started late never makes the next one skip
 ANNOTATIONS_H = 5.0
 FORECAST_DELAY = dt.timedelta(minutes=45)
 
@@ -85,7 +87,7 @@ def run_collect(ing: Any, reader: Any, state: Any, now: dt.datetime | None = Non
     done_at = parse_state_time(state.get("bootstrap_done"))
     by_name = {s[0]: s for s in steps}
     task("reference", "reference", by_name["reference"][2])  # no-op unless the catalog file changed
-    for name, hours in (("servicehealth", DAILY_H), ("inventory", DAILY_H), ("vm_annotations", ANNOTATIONS_H)):
+    for name, hours in (("servicehealth", SERVICE_HEALTH_H), ("inventory", DAILY_H), ("vm_annotations", ANNOTATIONS_H)):
         if name not in by_name:
             continue
         if is_due(state.last_success(by_name[name][1]), now, hours):
